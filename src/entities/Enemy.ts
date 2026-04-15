@@ -21,7 +21,7 @@ export class Enemy {
 
   // ウェイポイント進行
   private path: { col: number; row: number }[];
-  private waypointIndex: number = 0;
+  waypointIndex: number = 0;
   // ピクセル座標（中心）
   x: number;
   y: number;
@@ -37,17 +37,24 @@ export class Enemy {
   // 描画オブジェクト
   private bodyCircle!: Phaser.GameObjects.Graphics;
   private hpBar!: Phaser.GameObjects.Graphics;
-  constructor(scene: Phaser.Scene, def: EnemyDef, wave: number, path: { col: number; row: number }[]) {
+  constructor(
+    scene: Phaser.Scene,
+    def: EnemyDef,
+    wave: number,
+    path: { col: number; row: number }[],
+    startWaypointIndex?: number,
+  ) {
     this.id = nextId++;
     this.def = def;
     this.maxHp = scaleHp(def.baseHp, wave);
     this.hp = this.maxHp;
     this.path = path;
 
-    const start = path[0];
-    this.x = GRID_OFFSET_X + start.col * CELL_SIZE + CELL_SIZE / 2;
-    this.y = GRID_OFFSET_Y + start.row * CELL_SIZE + CELL_SIZE / 2;
-    this.waypointIndex = 1;
+    const wpIdx = startWaypointIndex ?? 1;
+    this.waypointIndex = Math.min(wpIdx, path.length - 1);
+    const startPoint = path[Math.max(0, this.waypointIndex - 1)];
+    this.x = GRID_OFFSET_X + startPoint.col * CELL_SIZE + CELL_SIZE / 2;
+    this.y = GRID_OFFSET_Y + startPoint.row * CELL_SIZE + CELL_SIZE / 2;
 
     this.bodyCircle = scene.add.graphics();
     this.hpBar = scene.add.graphics();
@@ -169,6 +176,12 @@ export class Enemy {
     if (this.isSlowed()) {
       g.lineStyle(2, 0x00cfff);
       g.strokeCircle(this.x, this.y, this.def.radius + 2);
+    }
+
+    // 装甲持ちの六角形リング
+    if (this.def.traits.includes('armored')) {
+      g.lineStyle(3, 0xb0bec5, 0.9);
+      g.strokeCircle(this.x, this.y, this.def.radius + 3);
     }
 
     // DoT 時の炎リング

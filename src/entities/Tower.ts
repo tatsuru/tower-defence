@@ -86,16 +86,23 @@ export class Tower {
     return dx * dx + dy * dy <= this.rangePixels * this.rangePixels;
   }
 
+  private calcDamage(base: number, target: Enemy): number {
+    // 装甲持ちは魔法塔（area）以外のダメージを50%軽減
+    const isArmored = target.def.traits.includes('armored');
+    const isPiercing = this.def.attackType === 'area';
+    return isArmored && !isPiercing ? Math.ceil(base * 0.5) : base;
+  }
+
   private attack(target: Enemy, enemies: Enemy[]): void {
     const ld = this.levelDef;
     switch (this.def.attackType) {
       case 'single':
-        target.takeDamage(ld.damage);
+        target.takeDamage(this.calcDamage(ld.damage, target));
         break;
       case 'area':
         enemies
           .filter((e) => !e.isDead && !e.hasReachedExit && this.inRange(e))
-          .forEach((e) => e.takeDamage(ld.damage));
+          .forEach((e) => e.takeDamage(ld.damage)); // 魔法は装甲貫通
         break;
       case 'slow':
         target.takeDamage(ld.damage);

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ENEMY_DEFS } from '../data/enemies';
+import { ALL_ENEMY_DEFS } from '../data/enemies';
 import { getWaveDef, PREPARATION_SECONDS } from '../data/waves';
 import { Enemy } from '../entities/Enemy';
 import { GameState } from '../state/GameState';
@@ -97,29 +97,40 @@ export class WaveManager {
     }
   }
 
-  private spawnEnemy(kind: string): void {
-    const def = ENEMY_DEFS[kind as keyof typeof ENEMY_DEFS];
+  private spawnEnemy(kind: string, waypointIndex?: number): void {
+    const def = ALL_ENEMY_DEFS[kind];
     if (!def) return;
-    const enemy = new Enemy(this.scene, def, this.state.wave, this.path);
+    const enemy = new Enemy(this.scene, def, this.state.wave, this.path, waypointIndex);
     this.enemies.push(enemy);
   }
 
   private updateEnemies(deltaMs: number): void {
+    const toAdd: Enemy[] = [];
+
     for (const enemy of this.enemies) {
       enemy.update(deltaMs);
 
       if (enemy.hasReachedExit && !enemy.isDead) {
-        enemy.isDead = true; // 以後の処理をスキップ
+        enemy.isDead = true;
         this.state.loseLife();
         enemy.destroy();
       } else if (enemy.isDead) {
         this.state.addGold(enemy.def.reward);
+        // 分裂: 死亡地点のウェイポイントから小型ゴブリン2体スポーン
+        if (enemy.def.traits.includes('splitting')) {
+          const splitDef = ALL_ENEMY_DEFS['goblin_split'];
+          if (splitDef) {
+            for (let i = 0; i < 2; i++) {
+              toAdd.push(new Enemy(this.scene, splitDef, this.state.wave, this.path, enemy.waypointIndex));
+            }
+          }
+        }
         enemy.destroy();
       }
     }
 
-    // 処理済みの敵を除去
     this.enemies = this.enemies.filter((e) => !e.isDead && !e.hasReachedExit);
+    this.enemies.push(...toAdd);
   }
 
   private handleWaveEnd(): void {
