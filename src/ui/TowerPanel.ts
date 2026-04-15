@@ -44,6 +44,7 @@ export class TowerPanel {
           fontSize: '12px',
           color: '#ffffff',
           align: 'center',
+          wordWrap: { width: BUTTON_W - 12 },
         })
         .setOrigin(0.5);
       this.labels.push(label);
