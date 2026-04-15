@@ -17,8 +17,9 @@ export class PreparationOverlay {
       .setOrigin(0.5)
       .setDepth(10);
 
-    const bx = SCREEN_WIDTH - 150;
-    const by = STATUS_BAR_HEIGHT + 6;
+    // ステータスバー内の右端に配置（詳細パネルと重ならないよう）
+    const bx = SCREEN_WIDTH - 145;
+    const by = 10;
     this.skipBtn = scene.add.graphics().setDepth(10);
     this.skipLabel = scene.add
       .text(bx + 65, by + 14, '今すぐ開始', { fontSize: '13px', color: '#ffffff' })
@@ -52,8 +53,8 @@ export class PreparationOverlay {
 
     this.skipBtn.clear();
     this.skipBtn.fillStyle(0x223344);
-    this.skipBtn.fillRoundedRect(SCREEN_WIDTH - 150, STATUS_BAR_HEIGHT + 6, 130, 28, 4);
+    this.skipBtn.fillRoundedRect(SCREEN_WIDTH - 145, 10, 130, 28, 4);
     this.skipBtn.lineStyle(1, 0x445566);
-    this.skipBtn.strokeRoundedRect(SCREEN_WIDTH - 150, STATUS_BAR_HEIGHT + 6, 130, 28, 4);
+    this.skipBtn.strokeRoundedRect(SCREEN_WIDTH - 145, 10, 130, 28, 4);
   }
 }
