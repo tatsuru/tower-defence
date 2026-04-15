@@ -14,6 +14,7 @@ const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
 const BUTTON_W = 148;
 const BUTTON_H = 64;
 const BUTTON_GAP = 8;
+const INFO_Y = PANEL_Y + BUTTON_H + 12; // ボタン下の説明エリア開始Y
 
 export class TowerPanel {
   private bg: Phaser.GameObjects.Graphics;
@@ -21,11 +22,11 @@ export class TowerPanel {
   private nameTexts: Phaser.GameObjects.Text[] = [];
   private costTexts: Phaser.GameObjects.Text[] = [];
 
-  // ホバー時にパネル上部に表示するツールチップ
-  private tooltipBg: Phaser.GameObjects.Graphics;
-  private tooltipText: Phaser.GameObjects.Text;
+  // パネル内の固定説明エリア
+  private infoText: Phaser.GameObjects.Text;
 
   selectedKind: TowerKind | null = null;
+  private hoveredKind: TowerKind | null = null;
   private state: GameState;
   private startX: number;
 
@@ -36,23 +37,23 @@ export class TowerPanel {
     this.bg.fillStyle(0x0d0d1e);
     this.bg.fillRect(0, PANEL_Y - 4, SCREEN_WIDTH, BOTTOM_PANEL_HEIGHT + 4);
 
+    // 説明エリアの区切り線
+    const divider = scene.add.graphics();
+    divider.lineStyle(1, 0x334455);
+    divider.beginPath();
+    divider.moveTo(16, INFO_Y - 4);
+    divider.lineTo(SCREEN_WIDTH - 16, INFO_Y - 4);
+    divider.strokePath();
+
+    this.infoText = scene.add.text(SCREEN_WIDTH / 2, INFO_Y, '', {
+      fontSize: '13px',
+      color: '#cccccc',
+      align: 'center',
+      lineSpacing: 5,
+    }).setOrigin(0.5, 0);
+
     const totalW = TOWER_KINDS.length * (BUTTON_W + BUTTON_GAP) - BUTTON_GAP;
     this.startX = (SCREEN_WIDTH - totalW) / 2;
-
-    // ツールチップ（パネル上端に表示）
-    const tooltipY = PANEL_Y - 32;
-    this.tooltipBg = scene.add.graphics().setDepth(15);
-    this.tooltipText = scene.add
-      .text(SCREEN_WIDTH / 2, tooltipY + 6, '', {
-        fontSize: '13px',
-        color: '#dddddd',
-        align: 'left',
-        lineSpacing: 4,
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(15);
-    this.tooltipBg.setVisible(false);
-    this.tooltipText.setVisible(false);
 
     TOWER_KINDS.forEach((kind, i) => {
       const def = TOWER_DEFS[kind];
@@ -83,12 +84,19 @@ export class TowerPanel {
         .zone(bx, by, BUTTON_W, BUTTON_H)
         .setOrigin(0, 0)
         .setInteractive()
-        .on('pointerover', () => this.showTooltip(kind))
-        .on('pointerout', () => this.hideTooltip())
+        .on('pointerover', () => {
+          this.hoveredKind = kind;
+          this.updateInfo();
+        })
+        .on('pointerout', () => {
+          this.hoveredKind = null;
+          this.updateInfo();
+        })
         .on('pointerdown', () => {
           if (state.gold >= def.cost) {
             this.selectedKind = this.selectedKind === kind ? null : kind;
             this.render(state);
+            this.updateInfo();
           }
         });
     });
@@ -97,41 +105,25 @@ export class TowerPanel {
     state.subscribe(() => this.render(state));
   }
 
-  private showTooltip(kind: TowerKind): void {
+  private updateInfo(): void {
+    const kind = this.hoveredKind ?? this.selectedKind;
+    if (!kind) {
+      this.infoText.setText('');
+      return;
+    }
+
     const def = TOWER_DEFS[kind];
     const hints = getSynergyHints(kind);
 
-    const lines = [
+    const lines: string[] = [
       `${def.name}：${def.description}`,
-      ...(hints.length > 0 ? ['── シナジー ──', ...hints] : []),
     ];
+    if (hints.length > 0) {
+      lines.push('── シナジー ──');
+      lines.push(...hints);
+    }
 
-    // テキストを先にセットして実際のサイズを取得する
-    this.tooltipText.setText(lines);
-
-    const pad = 12;
-    const tw = this.tooltipText.width + pad * 2;
-    const th = this.tooltipText.height + pad * 2;
-
-    // 画面右端からはみ出さないよう位置を調整
-    const tx = Math.min(SCREEN_WIDTH / 2 - tw / 2, SCREEN_WIDTH - tw - 8);
-    const ty = PANEL_Y - th - 4;
-
-    this.tooltipText.setPosition(tx + pad, ty + pad).setOrigin(0, 0);
-
-    this.tooltipBg.clear();
-    this.tooltipBg.fillStyle(0x111122, 0.95);
-    this.tooltipBg.fillRoundedRect(tx, ty, tw, th, 4);
-    this.tooltipBg.lineStyle(1, 0x556677);
-    this.tooltipBg.strokeRoundedRect(tx, ty, tw, th, 4);
-
-    this.tooltipBg.setVisible(true);
-    this.tooltipText.setVisible(true);
-  }
-
-  private hideTooltip(): void {
-    this.tooltipBg.setVisible(false);
-    this.tooltipText.setVisible(false);
+    this.infoText.setText(lines);
   }
 
   private render(state: GameState): void {
@@ -163,5 +155,6 @@ export class TowerPanel {
   deselect(): void {
     this.selectedKind = null;
     this.render(this.state);
+    this.updateInfo();
   }
 }
