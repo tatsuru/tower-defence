@@ -16,6 +16,7 @@ import { ParticleEffect } from '../effects/ParticleEffect';
 import { ScreenFlash } from '../effects/ScreenFlash';
 import { WaveBanner } from '../ui/WaveBanner';
 import { soundManager } from '../audio/SoundManager';
+import { EnemyTooltip } from '../ui/EnemyTooltip';
 
 const CELL_COLORS: Record<CellType, number> = {
   [CellType.Empty]:    0x2d5a27,
@@ -37,6 +38,7 @@ export class GameScene extends Phaser.Scene {
   private particleEffect!: ParticleEffect;
   private screenFlash!: ScreenFlash;
   private waveBanner!: WaveBanner;
+  private enemyTooltip!: EnemyTooltip;
   private towerPanel!: TowerPanel;
   private detailPanel!: TowerDetailPanel;
   private prepOverlay!: PreparationOverlay;
@@ -58,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.particleEffect = new ParticleEffect(this);
     this.screenFlash = new ScreenFlash(this);
     this.waveBanner = new WaveBanner(this);
+    this.enemyTooltip = new EnemyTooltip(this);
 
     this.waveManager = new WaveManager(
       this,
@@ -105,6 +108,21 @@ export class GameScene extends Phaser.Scene {
 
   private onHover(ptr: Phaser.Input.Pointer): void {
     this.hoverGraphics.clear();
+
+    // 敵ホバー判定（グリッドより優先）
+    const hoveredEnemy = this.waveManager.enemies.find((e) => {
+      if (e.isDead || e.hasReachedExit) return false;
+      const dx = ptr.x - e.x;
+      const dy = ptr.y - e.y;
+      return dx * dx + dy * dy <= (e.def.radius + 4) * (e.def.radius + 4);
+    });
+
+    if (hoveredEnemy) {
+      this.enemyTooltip.show(hoveredEnemy, ptr.x, ptr.y);
+      return;
+    }
+    this.enemyTooltip.hide();
+
     const cell = this.pixelToCell(ptr.x, ptr.y);
     if (!cell) return;
 
