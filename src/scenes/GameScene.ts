@@ -131,6 +131,7 @@ export class GameScene extends Phaser.Scene {
     this.towers = this.towers.filter((t) => t !== tower);
     this.mapData.grid[tower.row][tower.col].type = CellType.Empty;
     tower.destroy();
+    this.recalcAllSynergies();
   }
 
   private placeTower(kind: TowerKind, col: number, row: number): void {
@@ -144,6 +145,16 @@ export class GameScene extends Phaser.Scene {
     const tower = new Tower(this, def, col, row);
     this.towers.push(tower);
     this.mapData.grid[row][col].type = CellType.Blocked;
+    this.recalcAllSynergies();
+  }
+
+  private recalcAllSynergies(): void {
+    for (const tower of this.towers) {
+      const neighbors = this.towers.filter(
+        (t) => t !== tower && Math.abs(t.col - tower.col) <= 1 && Math.abs(t.row - tower.row) <= 1,
+      );
+      tower.recalcSynergy(neighbors);
+    }
   }
 
   private pixelToCell(px: number, py: number): { col: number; row: number } | null {

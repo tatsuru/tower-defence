@@ -1,20 +1,26 @@
 import Phaser from 'phaser';
 import { CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants';
 import { TowerDef, TowerKind, TowerLevelDef } from '../data/towers';
+import { SYNERGY_DEFS, SynergyBonus, findSynergy, mergeBonuses } from '../data/synergies';
 import { Enemy } from './Enemy';
 
 export class Tower {
   readonly kind: TowerKind;
   readonly col: number;
   readonly row: number;
-  level: number = 0; // 0-indexed (Lv1 = index 0)
-  totalCost: number; // 設置コスト + 累計アップグレードコスト（売却額の計算に使用）
+  level: number = 0;
+  totalCost: number;
 
   private def: TowerDef;
   private cooldownMs: number = 0;
   private graphics: Phaser.GameObjects.Graphics;
   private effectGraphics: Phaser.GameObjects.Graphics;
+  private synergyGraphics: Phaser.GameObjects.Graphics;
   private scene: Phaser.Scene;
+
+  // 現在適用中のシナジーボーナス（毎フレームではなく配置変更時に再計算）
+  private synergyBonus: SynergyBonus = {};
+  private synergyLabels: string[] = [];
 
   constructor(scene: Phaser.Scene, def: TowerDef, col: number, row: number) {
     this.scene = scene;
@@ -26,6 +32,7 @@ export class Tower {
 
     this.graphics = scene.add.graphics();
     this.effectGraphics = scene.add.graphics();
+    this.synergyGraphics = scene.add.graphics();
     this.drawSelf();
   }
 
@@ -42,7 +49,20 @@ export class Tower {
   }
 
   get rangePixels(): number {
-    return this.levelDef.range * CELL_SIZE;
+    const base = this.levelDef.range + (this.synergyBonus.rangeBonus ?? 0);
+    return base * CELL_SIZE;
+  }
+
+  get effectiveDamage(): number {
+    return Math.round(this.levelDef.damage * (this.synergyBonus.damageMultiplier ?? 1));
+  }
+
+  get effectiveAttacksPerSecond(): number {
+    return this.levelDef.attacksPerSecond * (this.synergyBonus.attackSpeedMultiplier ?? 1);
+  }
+
+  get activeSynergyLabels(): string[] {
+    return this.synergyLabels;
   }
 
   canUpgrade(): boolean {
@@ -60,6 +80,34 @@ export class Tower {
     this.drawSelf();
   }
 
+  /** 配置変更時に GameScene から呼ばれる */
+  recalcSynergy(neighbors: Tower[]): void {
+    const bonuses: SynergyBonus[] = [];
+    const labels: string[] = [];
+
+    for (const nb of neighbors) {
+      const bonus = findSynergy(this.kind, nb.kind);
+      if (bonus) {
+        bonuses.push(bonus);
+        // ラベルを重複なく収集
+        const def = this.getSynergyLabel(this.kind, nb.kind);
+        if (def && !labels.includes(def)) labels.push(def);
+      }
+    }
+
+    this.synergyBonus = mergeBonuses(bonuses);
+    this.synergyLabels = labels;
+    this.drawSynergyIndicator();
+  }
+
+  private getSynergyLabel(a: TowerKind, b: TowerKind): string | null {
+    for (const def of SYNERGY_DEFS) {
+      if (def.kinds[0] === a && def.kinds[1] === b) return def.label;
+      if (def.kinds[1] === a && def.kinds[0] === b && def.target === 'both') return def.label;
+    }
+    return null;
+  }
+
   update(deltaMs: number, enemies: Enemy[]): void {
     this.effectGraphics.clear();
     this.cooldownMs = Math.max(0, this.cooldownMs - deltaMs);
@@ -69,14 +117,13 @@ export class Tower {
     if (!target) return;
 
     this.attack(target, enemies);
-    this.cooldownMs = 1000 / this.levelDef.attacksPerSecond;
+    this.cooldownMs = 1000 / this.effectiveAttacksPerSecond;
     this.drawAttackEffect(target, enemies);
   }
 
   private findTarget(enemies: Enemy[]): Enemy | null {
     const inRange = enemies.filter((e) => !e.isDead && !e.hasReachedExit && this.inRange(e));
     if (inRange.length === 0) return null;
-    // 最も経路を進んでいる敵を優先
     return inRange.reduce((best, e) => (e.progress > best.progress ? e : best));
   }
 
@@ -87,10 +134,10 @@ export class Tower {
   }
 
   private calcDamage(base: number, target: Enemy): number {
-    // 装甲持ちは魔法塔（area）以外のダメージを50%軽減
     const isArmored = target.def.traits.includes('armored');
     const isPiercing = this.def.attackType === 'area';
-    return isArmored && !isPiercing ? Math.ceil(base * 0.5) : base;
+    const afterArmor = isArmored && !isPiercing ? Math.ceil(base * 0.5) : base;
+    return Math.round(afterArmor * (this.synergyBonus.damageMultiplier ?? 1));
   }
 
   private attack(target: Enemy, enemies: Enemy[]): void {
@@ -102,14 +149,14 @@ export class Tower {
       case 'area':
         enemies
           .filter((e) => !e.isDead && !e.hasReachedExit && this.inRange(e))
-          .forEach((e) => e.takeDamage(ld.damage)); // 魔法は装甲貫通
+          .forEach((e) => e.takeDamage(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1))));
         break;
       case 'slow':
-        target.takeDamage(ld.damage);
+        target.takeDamage(this.calcDamage(ld.damage, target));
         target.applySlow();
         break;
       case 'dot':
-        target.applyDot(ld.damage);
+        target.applyDot(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1)));
         break;
     }
   }
@@ -119,11 +166,9 @@ export class Tower {
     g.clear();
 
     if (this.def.attackType === 'area') {
-      // 範囲攻撃：射程円をフラッシュ
       g.lineStyle(2, this.levelDef.color, 0.7);
       g.strokeCircle(this.centerX, this.centerY, this.rangePixels);
     } else {
-      // 単体：対象への射線
       g.lineStyle(2, this.levelDef.color, 0.9);
       g.beginPath();
       g.moveTo(this.centerX, this.centerY);
@@ -131,8 +176,6 @@ export class Tower {
       g.strokePath();
     }
 
-    // 1フレームだけ表示するためにすぐ消す予定だが、
-    // Phaser は update ごとに clear() するのでそのままでよい
     void enemies;
   }
 
@@ -148,6 +191,38 @@ export class Tower {
   destroy(): void {
     this.graphics.destroy();
     this.effectGraphics.destroy();
+    this.synergyGraphics.destroy();
+    const textKey = `tower_label_${this.col}_${this.row}`;
+    this.scene.children.getByName(textKey)?.destroy();
+    const synergyKey = `synergy_label_${this.col}_${this.row}`;
+    this.scene.children.getByName(synergyKey)?.destroy();
+  }
+
+  private drawSynergyIndicator(): void {
+    const g = this.synergyGraphics;
+    g.clear();
+
+    const hasBonus = this.synergyLabels.length > 0;
+    if (hasBonus) {
+      // シナジー発動中: 金色のリング
+      g.lineStyle(2, 0xffd700, 0.8);
+      g.strokeCircle(this.centerX, this.centerY, CELL_SIZE * 0.48);
+    }
+
+    // シナジーラベルテキスト
+    const synergyKey = `synergy_label_${this.col}_${this.row}`;
+    let labelText = this.scene.children.getByName(synergyKey) as Phaser.GameObjects.Text | null;
+    if (!labelText) {
+      labelText = this.scene.add
+        .text(this.centerX, this.centerY - CELL_SIZE * 0.5 + 2, '', {
+          fontSize: '8px',
+          color: '#ffd700',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5, 1)
+        .setName(synergyKey);
+    }
+    labelText.setText(hasBonus ? this.synergyLabels.join(' ') : '');
   }
 
   private drawSelf(): void {
@@ -159,32 +234,22 @@ export class Tower {
     const cy = this.centerY;
     const half = (CELL_SIZE * ld.size) / 2;
 
-    // ベース（四角）
     g.fillStyle(ld.color);
     g.fillRect(cx - half, cy - half, half * 2, half * 2);
 
-    // レベルに応じた装飾
     if (this.level >= 1) {
-      // Lv2: 内側に明るい枠
       g.lineStyle(2, 0xffffff, 0.5);
       g.strokeRect(cx - half + 3, cy - half + 3, (half - 3) * 2, (half - 3) * 2);
     }
     if (this.level >= 2) {
-      // Lv3: 中心に白い菱形
       g.fillStyle(0xffffff, 0.6);
       g.fillTriangle(cx, cy - 6, cx + 6, cy, cx, cy + 6);
       g.fillTriangle(cx, cy - 6, cx - 6, cy, cx, cy + 6);
     }
 
-    // タワー種別アイコン（文字）
     const icons: Record<string, string> = {
-      archer: '弓',
-      mage: '魔',
-      cannon: '砲',
-      ice: '氷',
-      fire: '炎',
+      archer: '弓', mage: '魔', cannon: '砲', ice: '氷', fire: '炎',
     };
-    // テキストは初回のみ追加（再描画で増えないよう名前で管理）
     const textKey = `tower_label_${this.col}_${this.row}`;
     if (!this.scene.children.getByName(textKey)) {
       this.scene.add
