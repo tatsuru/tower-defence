@@ -8,6 +8,7 @@ export class GameOverOverlay {
   private scoreText: Phaser.GameObjects.Text;
   private restartBtn: Phaser.GameObjects.Graphics;
   private restartLabel: Phaser.GameObjects.Text;
+  private restartZone: Phaser.GameObjects.Zone;
 
   constructor(scene: Phaser.Scene, state: GameState, onRestart: () => void) {
     const cx = SCREEN_WIDTH / 2;
@@ -42,7 +43,7 @@ export class GameOverOverlay {
       .setOrigin(0.5)
       .setDepth(21);
 
-    scene.add
+    this.restartZone = scene.add
       .zone(cx - 100, cy + 60, 200, 44)
       .setOrigin(0, 0)
       .setInteractive()
@@ -65,5 +66,10 @@ export class GameOverOverlay {
     this.scoreText.setVisible(v);
     this.restartBtn.setVisible(v);
     this.restartLabel.setVisible(v);
+    if (v) {
+      this.restartZone.setInteractive();
+    } else {
+      this.restartZone.disableInteractive();
+    }
   }
 }
