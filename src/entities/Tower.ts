@@ -3,6 +3,7 @@ import { CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y } from '../constants';
 import { TowerDef, TowerKind, TowerLevelDef } from '../data/towers';
 import { SYNERGY_DEFS, SynergyBonus, findSynergy, mergeBonuses } from '../data/synergies';
 import { Enemy } from './Enemy';
+import { soundManager } from '../audio/SoundManager';
 
 export class Tower {
   readonly kind: TowerKind;
@@ -145,6 +146,7 @@ export class Tower {
   }
 
   private attack(target: Enemy, enemies: Enemy[]): void {
+    soundManager.playAttack(this.kind);
     const ld = this.levelDef;
     switch (this.def.attackType) {
       case 'single':
@@ -181,6 +183,10 @@ export class Tower {
     }
 
     void enemies;
+  }
+
+  getGraphics(): Phaser.GameObjects.Graphics {
+    return this.graphics;
   }
 
   showRangeCircle(show: boolean): void {

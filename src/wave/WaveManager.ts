@@ -6,6 +6,12 @@ import { GameState } from '../state/GameState';
 
 type SpawnTask = { kind: string; remainingMs: number };
 
+export interface WaveManagerCallbacks {
+  onWaveStart: (wave: number) => void;
+  onEnemyDeath: (x: number, y: number, color: number, isBoss: boolean) => void;
+  onLifeLost: () => void;
+}
+
 export class WaveManager {
   private scene: Phaser.Scene;
   private state: GameState;
@@ -15,18 +21,20 @@ export class WaveManager {
   private spawnQueue: SpawnTask[] = [];
   private preparationMsRemaining: number = 0;
   private onWaveComplete: (() => void) | null = null;
+  private callbacks: WaveManagerCallbacks;
 
   constructor(
     scene: Phaser.Scene,
     state: GameState,
     path: { col: number; row: number }[],
     onWaveComplete: () => void,
+    callbacks: WaveManagerCallbacks,
   ) {
     this.scene = scene;
     this.state = state;
     this.path = path;
     this.onWaveComplete = onWaveComplete;
-    // 最初の準備フェーズを開始
+    this.callbacks = callbacks;
     this.preparationMsRemaining = PREPARATION_SECONDS * 1000;
   }
 
@@ -62,6 +70,7 @@ export class WaveManager {
 
   private startNextWave(): void {
     this.state.startWave();
+    this.callbacks.onWaveStart(this.state.wave);
     const waveDef = getWaveDef(this.state.wave);
     this.spawnQueue = [];
 
@@ -113,10 +122,12 @@ export class WaveManager {
       if (enemy.hasReachedExit && !enemy.isDead) {
         enemy.isDead = true;
         this.state.loseLife();
+        this.callbacks.onLifeLost();
         enemy.destroy();
       } else if (enemy.isDead) {
         this.state.addGold(enemy.def.reward);
-        // 分裂: 死亡地点のウェイポイントから小型ゴブリン2体スポーン
+        const isBoss = enemy.def.kind === 'dragon';
+        this.callbacks.onEnemyDeath(enemy.x, enemy.y, enemy.def.color, isBoss);
         if (enemy.def.traits.includes('splitting')) {
           const splitDef = ALL_ENEMY_DEFS['goblin_split'];
           if (splitDef) {

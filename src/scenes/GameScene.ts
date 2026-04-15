@@ -12,6 +12,10 @@ import { TowerDetailPanel } from '../ui/TowerDetailPanel';
 import { PreparationOverlay } from '../ui/PreparationOverlay';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 import { isBuildable } from '../map/MapGenerator';
+import { ParticleEffect } from '../effects/ParticleEffect';
+import { ScreenFlash } from '../effects/ScreenFlash';
+import { WaveBanner } from '../ui/WaveBanner';
+import { soundManager } from '../audio/SoundManager';
 
 const CELL_COLORS: Record<CellType, number> = {
   [CellType.Empty]:    0x2d5a27,
@@ -30,6 +34,9 @@ export class GameScene extends Phaser.Scene {
   private hoverGraphics!: Phaser.GameObjects.Graphics;
 
   private waveManager!: WaveManager;
+  private particleEffect!: ParticleEffect;
+  private screenFlash!: ScreenFlash;
+  private waveBanner!: WaveBanner;
   private towerPanel!: TowerPanel;
   private detailPanel!: TowerDetailPanel;
   private prepOverlay!: PreparationOverlay;
@@ -48,11 +55,29 @@ export class GameScene extends Phaser.Scene {
     this.hoverGraphics = this.add.graphics();
     this.drawGrid();
 
+    this.particleEffect = new ParticleEffect(this);
+    this.screenFlash = new ScreenFlash(this);
+    this.waveBanner = new WaveBanner(this);
+
     this.waveManager = new WaveManager(
       this,
       this.state,
       this.mapData.path,
       () => { /* ウェーブ完了時の追加処理があればここに */ },
+      {
+        onWaveStart: (wave) => {
+          this.waveBanner.show(wave);
+          soundManager.playWaveStart();
+        },
+        onEnemyDeath: (x, y, color, isBoss) => {
+          this.particleEffect.burst(x, y, color, isBoss ? 16 : 8);
+          soundManager.playEnemyDeath(isBoss);
+        },
+        onLifeLost: () => {
+          this.screenFlash.flash(0xff0000, 0.45, 350);
+          soundManager.playLifeLost();
+        },
+      },
     );
 
     new StatusBar(this, this.state);
@@ -69,6 +94,7 @@ export class GameScene extends Phaser.Scene {
     if (this.state.phase === 'gameover') return;
 
     this.waveManager.update(delta);
+    this.particleEffect.update(delta);
 
     for (const tower of this.towers) {
       tower.update(delta, this.waveManager.enemies);
@@ -146,6 +172,15 @@ export class GameScene extends Phaser.Scene {
     this.towers.push(tower);
     this.mapData.grid[row][col].type = CellType.Blocked;
     this.recalcAllSynergies();
+
+    soundManager.playTowerPlace();
+    this.tweens.add({
+      targets: tower.getGraphics(),
+      scaleX: { from: 0.5, to: 1 },
+      scaleY: { from: 0.5, to: 1 },
+      duration: 150,
+      ease: 'Back.easeOut',
+    });
   }
 
   private recalcAllSynergies(): void {
