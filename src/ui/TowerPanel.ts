@@ -105,12 +105,19 @@ export class TowerPanel {
       `${def.name}：${def.description}`,
       ...(hints.length > 0 ? ['── シナジー ──', ...hints] : []),
     ];
+
+    // テキストを先にセットして実際のサイズを取得する
     this.tooltipText.setText(lines);
 
-    const tw = Math.max(...lines.map((l) => l.length)) * 8 + 24;
-    const th = lines.length * 20 + 12;
+    const pad = 12;
+    const tw = this.tooltipText.width + pad * 2;
+    const th = this.tooltipText.height + pad * 2;
+
+    // 画面右端からはみ出さないよう位置を調整
     const tx = Math.min(SCREEN_WIDTH / 2 - tw / 2, SCREEN_WIDTH - tw - 8);
     const ty = PANEL_Y - th - 4;
+
+    this.tooltipText.setPosition(tx + pad, ty + pad).setOrigin(0, 0);
 
     this.tooltipBg.clear();
     this.tooltipBg.fillStyle(0x111122, 0.95);
@@ -118,7 +125,6 @@ export class TowerPanel {
     this.tooltipBg.lineStyle(1, 0x556677);
     this.tooltipBg.strokeRoundedRect(tx, ty, tw, th, 4);
 
-    this.tooltipText.setPosition(tx + tw / 2, ty + 8);
     this.tooltipBg.setVisible(true);
     this.tooltipText.setVisible(true);
   }
