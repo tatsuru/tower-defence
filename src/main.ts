@@ -1,19 +1,13 @@
 import Phaser from 'phaser';
+import { GameScene } from './scenes/GameScene';
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 1024,
-  height: 640,
+  width: SCREEN_WIDTH,
+  height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
-  scene: {
-    create() {
-      const text = this.add.text(512, 320, 'Fantasy Tower Defense', {
-        fontSize: '32px',
-        color: '#ffffff',
-      });
-      text.setOrigin(0.5);
-    },
-  },
+  scene: [GameScene],
 };
 
-new Phaser.Game(config);
+export default new Phaser.Game(config);
