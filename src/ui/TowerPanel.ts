@@ -10,23 +10,23 @@ import { TOWER_DEFS, TOWER_KINDS, TowerKind } from '../data/towers';
 import { GameState } from '../state/GameState';
 
 const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
-const BUTTON_W = 150;
-const BUTTON_H = 88;
+const BUTTON_W = 148;
+const BUTTON_H = 64;
 const BUTTON_GAP = 8;
-const TEXT_PADDING = 8;
-
-interface ButtonTexts {
-  name: Phaser.GameObjects.Text;
-  cost: Phaser.GameObjects.Text;
-  desc: Phaser.GameObjects.Text;
-}
 
 export class TowerPanel {
   private bg: Phaser.GameObjects.Graphics;
   private buttons: Phaser.GameObjects.Graphics[] = [];
-  private buttonTexts: ButtonTexts[] = [];
+  private nameTexts: Phaser.GameObjects.Text[] = [];
+  private costTexts: Phaser.GameObjects.Text[] = [];
+
+  // ホバー時にパネル上部に表示するツールチップ
+  private tooltipBg: Phaser.GameObjects.Graphics;
+  private tooltipText: Phaser.GameObjects.Text;
+
   selectedKind: TowerKind | null = null;
   private state: GameState;
+  private startX: number;
 
   constructor(scene: Phaser.Scene, state: GameState) {
     this.state = state;
@@ -36,44 +36,52 @@ export class TowerPanel {
     this.bg.fillRect(0, PANEL_Y - 4, SCREEN_WIDTH, BOTTOM_PANEL_HEIGHT + 4);
 
     const totalW = TOWER_KINDS.length * (BUTTON_W + BUTTON_GAP) - BUTTON_GAP;
-    const startX = (SCREEN_WIDTH - totalW) / 2;
-    const maxTextW = BUTTON_W - TEXT_PADDING * 2;
+    this.startX = (SCREEN_WIDTH - totalW) / 2;
+
+    // ツールチップ（パネル上端に表示）
+    const tooltipY = PANEL_Y - 32;
+    this.tooltipBg = scene.add.graphics().setDepth(15);
+    this.tooltipText = scene.add
+      .text(SCREEN_WIDTH / 2, tooltipY + 6, '', {
+        fontSize: '14px',
+        color: '#dddddd',
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(15);
+    this.tooltipBg.setVisible(false);
+    this.tooltipText.setVisible(false);
 
     TOWER_KINDS.forEach((kind, i) => {
       const def = TOWER_DEFS[kind];
-      const bx = startX + i * (BUTTON_W + BUTTON_GAP);
+      const bx = this.startX + i * (BUTTON_W + BUTTON_GAP);
       const by = PANEL_Y + 4;
-      const tx = bx + TEXT_PADDING;
 
       const btn = scene.add.graphics();
       this.buttons.push(btn);
 
-      const nameText = scene.add.text(tx, by + 8, def.name, {
-        fontSize: '13px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-        fixedWidth: maxTextW,
-      });
+      const nameText = scene.add
+        .text(bx + BUTTON_W / 2, by + 14, def.name, {
+          fontSize: '15px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5, 0);
+      this.nameTexts.push(nameText);
 
-      const costText = scene.add.text(tx, by + 28, `${def.cost}G`, {
-        fontSize: '12px',
-        color: '#ffd700',
-        fixedWidth: maxTextW,
-      });
-
-      const descText = scene.add.text(tx, by + 46, def.description, {
-        fontSize: '11px',
-        color: '#aaaaaa',
-        fixedWidth: maxTextW,
-        wordWrap: { width: maxTextW },
-      });
-
-      this.buttonTexts.push({ name: nameText, cost: costText, desc: descText });
+      const costText = scene.add
+        .text(bx + BUTTON_W / 2, by + 36, `${def.cost}G`, {
+          fontSize: '14px',
+          color: '#ffd700',
+        })
+        .setOrigin(0.5, 0);
+      this.costTexts.push(costText);
 
       scene.add
         .zone(bx, by, BUTTON_W, BUTTON_H)
         .setOrigin(0, 0)
         .setInteractive()
+        .on('pointerover', () => this.showTooltip(kind))
+        .on('pointerout', () => this.hideTooltip())
         .on('pointerdown', () => {
           if (state.gold >= def.cost) {
             this.selectedKind = this.selectedKind === kind ? null : kind;
@@ -86,12 +94,35 @@ export class TowerPanel {
     state.subscribe(() => this.render(state));
   }
 
+  private showTooltip(kind: TowerKind): void {
+    const def = TOWER_DEFS[kind];
+    const text = `${def.name}：${def.description}`;
+    this.tooltipText.setText(text);
+
+    const tw = this.tooltipText.width + 20;
+    const th = 28;
+    const tx = SCREEN_WIDTH / 2 - tw / 2;
+    const ty = PANEL_Y - 34;
+
+    this.tooltipBg.clear();
+    this.tooltipBg.fillStyle(0x111122, 0.95);
+    this.tooltipBg.fillRoundedRect(tx, ty, tw, th, 4);
+    this.tooltipBg.lineStyle(1, 0x445566);
+    this.tooltipBg.strokeRoundedRect(tx, ty, tw, th, 4);
+
+    this.tooltipBg.setVisible(true);
+    this.tooltipText.setVisible(true);
+  }
+
+  private hideTooltip(): void {
+    this.tooltipBg.setVisible(false);
+    this.tooltipText.setVisible(false);
+  }
+
   private render(state: GameState): void {
     TOWER_KINDS.forEach((kind, i) => {
       const def = TOWER_DEFS[kind];
-      const bx =
-        (SCREEN_WIDTH - (TOWER_KINDS.length * (BUTTON_W + BUTTON_GAP) - BUTTON_GAP)) / 2 +
-        i * (BUTTON_W + BUTTON_GAP);
+      const bx = this.startX + i * (BUTTON_W + BUTTON_GAP);
       const by = PANEL_Y + 4;
 
       const affordable = state.gold >= def.cost;
@@ -107,10 +138,10 @@ export class TowerPanel {
       btn.lineStyle(2, borderColor);
       btn.strokeRoundedRect(bx, by, BUTTON_W, BUTTON_H, 6);
 
-      const texts = this.buttonTexts[i];
-      texts.name.setColor(affordable ? '#ffffff' : '#555555');
-      texts.cost.setColor(affordable ? '#ffd700' : '#664400');
-      texts.desc.setColor(affordable ? '#aaaaaa' : '#444444');
+      this.nameTexts[i].setColor(affordable ? '#ffffff' : '#555555');
+      this.costTexts[i].setColor(affordable ? '#ffd700' : '#555500');
+
+      void def;
     });
   }
 
