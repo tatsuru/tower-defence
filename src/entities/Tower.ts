@@ -65,6 +65,10 @@ export class Tower {
     return this.synergyLabels;
   }
 
+  get activeBonus(): SynergyBonus {
+    return this.synergyBonus;
+  }
+
   canUpgrade(): boolean {
     return this.level < this.def.levels.length - 1;
   }

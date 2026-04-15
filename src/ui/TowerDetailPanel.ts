@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Tower } from '../entities/Tower';
 import { GameState } from '../state/GameState';
 import { TOWER_DEFS } from '../data/towers';
+import { bonusToString } from '../data/synergies';
 
 export const SELL_REFUND_RATE = 0.6;
 
@@ -89,11 +90,17 @@ export class TowerDetailPanel {
     const levelNames = ['Lv1', 'Lv2', 'Lv3'];
     const refund = Math.floor(tower.totalCost * SELL_REFUND_RATE);
 
+    const synergyLabels = tower.activeSynergyLabels;
+    const synergyLine = synergyLabels.length > 0
+      ? `\n★ ${synergyLabels.join(' / ')}: ${bonusToString(tower.activeBonus)}`
+      : '';
+
     this.text.setText(
       `${def.name} [${levelNames[tower.level]}]\n` +
-      `ダメージ: ${ld.damage}\n` +
-      `攻撃速度: ${ld.attacksPerSecond.toFixed(1)}/s\n` +
-      `射程: ${ld.range}マス`,
+      `ダメージ: ${tower.effectiveDamage}\n` +
+      `攻撃速度: ${tower.effectiveAttacksPerSecond.toFixed(1)}/s\n` +
+      `射程: ${(ld.range + (tower.activeBonus.rangeBonus ?? 0)).toFixed(1)}マス` +
+      synergyLine,
     );
 
     const canUp = tower.canUpgrade();

@@ -7,6 +7,7 @@ import {
   SCREEN_WIDTH,
 } from '../constants';
 import { TOWER_DEFS, TOWER_KINDS, TowerKind } from '../data/towers';
+import { getSynergyHints } from '../data/synergies';
 import { GameState } from '../state/GameState';
 
 const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
@@ -43,8 +44,10 @@ export class TowerPanel {
     this.tooltipBg = scene.add.graphics().setDepth(15);
     this.tooltipText = scene.add
       .text(SCREEN_WIDTH / 2, tooltipY + 6, '', {
-        fontSize: '14px',
+        fontSize: '13px',
         color: '#dddddd',
+        align: 'left',
+        lineSpacing: 4,
       })
       .setOrigin(0.5, 0)
       .setDepth(15);
@@ -96,20 +99,26 @@ export class TowerPanel {
 
   private showTooltip(kind: TowerKind): void {
     const def = TOWER_DEFS[kind];
-    const text = `${def.name}：${def.description}`;
-    this.tooltipText.setText(text);
+    const hints = getSynergyHints(kind);
 
-    const tw = this.tooltipText.width + 20;
-    const th = 28;
-    const tx = SCREEN_WIDTH / 2 - tw / 2;
-    const ty = PANEL_Y - 34;
+    const lines = [
+      `${def.name}：${def.description}`,
+      ...(hints.length > 0 ? ['── シナジー ──', ...hints] : []),
+    ];
+    this.tooltipText.setText(lines);
+
+    const tw = Math.max(...lines.map((l) => l.length)) * 8 + 24;
+    const th = lines.length * 20 + 12;
+    const tx = Math.min(SCREEN_WIDTH / 2 - tw / 2, SCREEN_WIDTH - tw - 8);
+    const ty = PANEL_Y - th - 4;
 
     this.tooltipBg.clear();
     this.tooltipBg.fillStyle(0x111122, 0.95);
     this.tooltipBg.fillRoundedRect(tx, ty, tw, th, 4);
-    this.tooltipBg.lineStyle(1, 0x445566);
+    this.tooltipBg.lineStyle(1, 0x556677);
     this.tooltipBg.strokeRoundedRect(tx, ty, tw, th, 4);
 
+    this.tooltipText.setPosition(tx + tw / 2, ty + 8);
     this.tooltipBg.setVisible(true);
     this.tooltipText.setVisible(true);
   }

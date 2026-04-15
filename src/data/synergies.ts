@@ -74,6 +74,59 @@ export function findSynergy(towerAKind: TowerKind, towerBKind: TowerKind): Syner
   return null;
 }
 
+/** ボーナスを人間が読める文字列にする */
+export function bonusToString(bonus: SynergyBonus): string {
+  const parts: string[] = [];
+  if (bonus.damageMultiplier !== undefined)
+    parts.push(`ダメージ×${bonus.damageMultiplier.toFixed(1)}`);
+  if (bonus.attackSpeedMultiplier !== undefined)
+    parts.push(`攻速×${bonus.attackSpeedMultiplier.toFixed(2)}`);
+  if (bonus.rangeBonus !== undefined)
+    parts.push(`射程+${bonus.rangeBonus}`);
+  return parts.join(' / ');
+}
+
+/**
+ * あるタワー種別が参加できるシナジーのヒント文字列リストを返す。
+ * 例: ['斉射: 弓兵塔と隣接 → 攻速×1.25']
+ */
+export function getSynergyHints(kind: TowerKind): string[] {
+  const seen = new Set<string>();
+  const hints: string[] = [];
+
+  for (const def of SYNERGY_DEFS) {
+    let partnerKind: TowerKind | null = null;
+    let receivesBonus = false;
+
+    if (def.kinds[0] === kind) {
+      partnerKind = def.kinds[1];
+      receivesBonus = def.target === 'both' || def.target === 'first';
+    } else if (def.kinds[1] === kind && def.target === 'both') {
+      partnerKind = def.kinds[0];
+      receivesBonus = true;
+    }
+
+    if (!partnerKind || !receivesBonus) continue;
+
+    const key = `${def.label}-${partnerKind}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const partnerName = TOWER_NAMES[partnerKind];
+    hints.push(`[${def.label}] ${partnerName}と隣接 → ${bonusToString(def.bonus)}`);
+  }
+
+  return hints;
+}
+
+const TOWER_NAMES: Record<TowerKind, string> = {
+  archer: '弓兵塔',
+  mage:   '魔法塔',
+  cannon: '砲台',
+  ice:    '氷の塔',
+  fire:   '炎の塔',
+};
+
 /** 複数の隣接タワーからシナジーをまとめて合算する */
 export function mergeBonuses(bonuses: SynergyBonus[]): SynergyBonus {
   const result: SynergyBonus = {};
