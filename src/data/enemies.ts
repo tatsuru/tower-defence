@@ -16,8 +16,8 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     kind: 'goblin',
     name: 'ゴブリン',
     baseHp: 60,
-    speed: 3.0,
-    reward: 5,
+    speed: 2.0,
+    reward: 8,
     color: 0x66bb6a,
     radius: 10,
   },
@@ -46,5 +46,5 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
  * wave=1 のとき倍率1.0、以降ウェーブごとに約15%増加。
  */
 export function scaleHp(baseHp: number, wave: number): number {
-  return Math.round(baseHp * Math.pow(1.15, wave - 1));
+  return Math.round(baseHp * Math.pow(1.10, wave - 1));
 }
