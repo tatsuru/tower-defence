@@ -11,13 +11,20 @@ import { GameState } from '../state/GameState';
 
 const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
 const BUTTON_W = 150;
-const BUTTON_H = 80;
+const BUTTON_H = 88;
 const BUTTON_GAP = 8;
+const TEXT_PADDING = 8;
+
+interface ButtonTexts {
+  name: Phaser.GameObjects.Text;
+  cost: Phaser.GameObjects.Text;
+  desc: Phaser.GameObjects.Text;
+}
 
 export class TowerPanel {
   private bg: Phaser.GameObjects.Graphics;
   private buttons: Phaser.GameObjects.Graphics[] = [];
-  private labels: Phaser.GameObjects.Text[] = [];
+  private buttonTexts: ButtonTexts[] = [];
   selectedKind: TowerKind | null = null;
   private state: GameState;
 
@@ -30,26 +37,39 @@ export class TowerPanel {
 
     const totalW = TOWER_KINDS.length * (BUTTON_W + BUTTON_GAP) - BUTTON_GAP;
     const startX = (SCREEN_WIDTH - totalW) / 2;
+    const maxTextW = BUTTON_W - TEXT_PADDING * 2;
 
     TOWER_KINDS.forEach((kind, i) => {
       const def = TOWER_DEFS[kind];
       const bx = startX + i * (BUTTON_W + BUTTON_GAP);
       const by = PANEL_Y + 4;
+      const tx = bx + TEXT_PADDING;
 
       const btn = scene.add.graphics();
       this.buttons.push(btn);
 
-      const label = scene.add
-        .text(bx + BUTTON_W / 2, by + BUTTON_H / 2, '', {
-          fontSize: '12px',
-          color: '#ffffff',
-          align: 'center',
-          wordWrap: { width: BUTTON_W - 12 },
-        })
-        .setOrigin(0.5);
-      this.labels.push(label);
+      const nameText = scene.add.text(tx, by + 8, def.name, {
+        fontSize: '13px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        fixedWidth: maxTextW,
+      });
 
-      // クリック判定用の透明ゾーン
+      const costText = scene.add.text(tx, by + 28, `${def.cost}G`, {
+        fontSize: '12px',
+        color: '#ffd700',
+        fixedWidth: maxTextW,
+      });
+
+      const descText = scene.add.text(tx, by + 46, def.description, {
+        fontSize: '11px',
+        color: '#aaaaaa',
+        fixedWidth: maxTextW,
+        wordWrap: { width: maxTextW },
+      });
+
+      this.buttonTexts.push({ name: nameText, cost: costText, desc: descText });
+
       scene.add
         .zone(bx, by, BUTTON_W, BUTTON_H)
         .setOrigin(0, 0)
@@ -60,8 +80,6 @@ export class TowerPanel {
             this.render(state);
           }
         });
-
-      void def;
     });
 
     this.render(state);
@@ -89,12 +107,10 @@ export class TowerPanel {
       btn.lineStyle(2, borderColor);
       btn.strokeRoundedRect(bx, by, BUTTON_W, BUTTON_H, 6);
 
-      const nameColor = affordable ? '#ffffff' : '#666666';
-      const costColor = affordable ? '#ffd700' : '#664400';
-
-      this.labels[i].setText(`${def.name}\n${def.cost}G\n${def.description}`);
-      this.labels[i].setColor(nameColor);
-      void costColor;
+      const texts = this.buttonTexts[i];
+      texts.name.setColor(affordable ? '#ffffff' : '#555555');
+      texts.cost.setColor(affordable ? '#ffd700' : '#664400');
+      texts.desc.setColor(affordable ? '#aaaaaa' : '#444444');
     });
   }
 
