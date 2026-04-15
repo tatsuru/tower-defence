@@ -211,10 +211,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private restartGame(): void {
-    // 全エンティティを破棄してシーンを再起動
     for (const t of this.towers) t.destroy();
     this.towers = [];
     this.waveManager.destroyAll();
-    this.scene.restart();
+    this.scene.start('TitleScene');
   }
 }
