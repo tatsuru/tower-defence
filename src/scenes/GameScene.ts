@@ -57,7 +57,7 @@ export class GameScene extends Phaser.Scene {
 
     new StatusBar(this, this.state);
     this.towerPanel = new TowerPanel(this, this.state);
-    this.detailPanel = new TowerDetailPanel(this, this.state);
+    this.detailPanel = new TowerDetailPanel(this, this.state, (tower) => this.sellTower(tower));
     this.prepOverlay = new PreparationOverlay(this, this.state, this.waveManager);
     new GameOverOverlay(this, this.state, () => this.restartGame());
 
@@ -125,6 +125,12 @@ export class GameScene extends Phaser.Scene {
     if (!kind) return;
 
     this.placeTower(kind, col, row);
+  }
+
+  private sellTower(tower: Tower): void {
+    this.towers = this.towers.filter((t) => t !== tower);
+    this.mapData.grid[tower.row][tower.col].type = CellType.Empty;
+    tower.destroy();
   }
 
   private placeTower(kind: TowerKind, col: number, row: number): void {

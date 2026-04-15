@@ -8,6 +8,7 @@ export class Tower {
   readonly col: number;
   readonly row: number;
   level: number = 0; // 0-indexed (Lv1 = index 0)
+  totalCost: number; // 設置コスト + 累計アップグレードコスト（売却額の計算に使用）
 
   private def: TowerDef;
   private cooldownMs: number = 0;
@@ -21,6 +22,7 @@ export class Tower {
     this.kind = def.kind;
     this.col = col;
     this.row = row;
+    this.totalCost = def.cost;
 
     this.graphics = scene.add.graphics();
     this.effectGraphics = scene.add.graphics();
@@ -53,6 +55,7 @@ export class Tower {
 
   upgrade(): void {
     if (!this.canUpgrade()) return;
+    this.totalCost += this.levelDef.upgradeCost;
     this.level++;
     this.drawSelf();
   }
