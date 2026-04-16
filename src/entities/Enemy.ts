@@ -173,33 +173,127 @@ export class Enemy {
     return this.waypointIndex / this.path.length;
   }
 
+  private lerpColor(c1: number, c2: number, t: number): number {
+    const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
+    const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
+    return (Math.round(r1 + (r2 - r1) * t) << 16)
+         | (Math.round(g1 + (g2 - g1) * t) << 8)
+         |  Math.round(b1 + (b2 - b1) * t);
+  }
+
   private drawSelf(): void {
     const g = this.bodyCircle;
     g.clear();
 
-    const color = this.isSlowed() ? 0xaaddff : this.def.color;
-    g.fillStyle(color);
-    g.fillCircle(this.x, this.y, this.def.radius);
+    const isSlowed = this.isSlowed();
+    const color = isSlowed ? this.lerpColor(this.def.color, 0x88ccff, 0.4) : this.def.color;
+    const x = this.x, y = this.y, r = this.def.radius;
 
-    // スロー時のリング
-    if (this.isSlowed()) {
-      g.lineStyle(2, 0x00cfff);
-      g.strokeCircle(this.x, this.y, this.def.radius + 2);
+    switch (this.def.kind) {
+      case 'goblin':       this.drawGoblin(g, x, y, r, color); break;
+      case 'orc':          this.drawOrc(g, x, y, r, color); break;
+      case 'dragon':       this.drawDragon(g, x, y, r, color); break;
+      case 'goblin_split': this.drawGoblinSplit(g, x, y, r, color); break;
     }
 
-    // 装甲持ちの六角形リング
+    if (isSlowed) {
+      g.lineStyle(2, 0x00cfff, 0.8);
+      g.strokeCircle(x, y, r + 2);
+    }
+    if (this.dotState) {
+      g.lineStyle(2, 0xff6600, 0.9);
+      g.strokeCircle(x, y, r + (isSlowed ? 4 : 2));
+    }
     if (this.def.traits.includes('armored')) {
       g.lineStyle(3, 0xb0bec5, 0.9);
-      g.strokeCircle(this.x, this.y, this.def.radius + 3);
-    }
-
-    // DoT 時の炎リング
-    if (this.dotState) {
-      g.lineStyle(2, 0xff6600);
-      g.strokeCircle(this.x, this.y, this.def.radius + 2);
+      g.strokeCircle(x, y, r + 4);
     }
 
     this.drawHpBar();
+  }
+
+  private drawGoblin(g: Phaser.GameObjects.Graphics, x: number, y: number, r: number, color: number): void {
+    // 耳（本体より先に描いて後ろに隠す）
+    g.fillStyle(this.lerpColor(color, 0x000000, 0.25));
+    g.fillTriangle(x - 6, y - r + 1, x - 9, y - r - 6, x - 2, y - r - 1);
+    g.fillTriangle(x + 6, y - r + 1, x + 9, y - r - 6, x + 2, y - r - 1);
+    // 本体
+    g.fillStyle(color);
+    g.fillCircle(x, y, r);
+    // 目
+    g.fillStyle(0xffee58);
+    g.fillCircle(x - 3, y - 2, 2.2);
+    g.fillCircle(x + 3, y - 2, 2.2);
+    g.fillStyle(0x1a1a1a);
+    g.fillCircle(x - 3, y - 2, 1.1);
+    g.fillCircle(x + 3, y - 2, 1.1);
+    // 口（歯）
+    g.fillStyle(0xfafafa);
+    g.fillRect(x - 3, y + 3, 2, 3);
+    g.fillRect(x + 1, y + 3, 2, 3);
+  }
+
+  private drawOrc(g: Phaser.GameObjects.Graphics, x: number, y: number, r: number, color: number): void {
+    // 本体
+    g.fillStyle(color);
+    g.fillCircle(x, y, r);
+    // 輪郭
+    g.lineStyle(2, this.lerpColor(color, 0x000000, 0.35), 0.9);
+    g.strokeCircle(x, y, r);
+    // 目
+    g.fillStyle(0xff1744);
+    g.fillCircle(x - 4, y - 4, 3);
+    g.fillCircle(x + 4, y - 4, 3);
+    g.fillStyle(0x1a1a1a);
+    g.fillCircle(x - 4, y - 4, 1.5);
+    g.fillCircle(x + 4, y - 4, 1.5);
+    // 眉（怒り）
+    g.lineStyle(2, 0x1a1a1a, 0.9);
+    g.beginPath(); g.moveTo(x - 7, y - 7); g.lineTo(x - 1, y - 6); g.strokePath();
+    g.beginPath(); g.moveTo(x + 7, y - 7); g.lineTo(x + 1, y - 6); g.strokePath();
+    // 牙
+    g.fillStyle(0xfff9c4);
+    g.fillTriangle(x - 4, y + 3, x - 6, y + 9, x - 2, y + 3);
+    g.fillTriangle(x + 4, y + 3, x + 6, y + 9, x + 2, y + 3);
+  }
+
+  private drawDragon(g: Phaser.GameObjects.Graphics, x: number, y: number, r: number, color: number): void {
+    // 翼（本体より後ろ）
+    const wingColor = this.lerpColor(color, 0x000000, 0.3);
+    g.fillStyle(wingColor, 0.85);
+    g.fillTriangle(x - r + 2, y - 4, x - r - 12, y - 12, x - r - 10, y + 8);
+    g.fillTriangle(x + r - 2, y - 4, x + r + 12, y - 12, x + r + 10, y + 8);
+    // 本体
+    g.fillStyle(color);
+    g.fillCircle(x, y, r);
+    // 背中のスパイク
+    const spikeColor = this.lerpColor(color, 0xffa000, 0.6);
+    g.fillStyle(spikeColor);
+    g.fillTriangle(x,     y - r,     x - 4, y - r - 9,  x + 4, y - r - 9);
+    g.fillTriangle(x - 8, y - r + 4, x - 12, y - r - 3, x - 4, y - r + 1);
+    g.fillTriangle(x + 8, y - r + 4, x + 12, y - r - 3, x + 4, y - r + 1);
+    // 目
+    g.fillStyle(0xffffff);
+    g.fillCircle(x - 5, y - 4, 4);
+    g.fillCircle(x + 5, y - 4, 4);
+    g.fillStyle(0x1a1a2e);
+    g.fillCircle(x - 4, y - 3, 2.2);
+    g.fillCircle(x + 4, y - 3, 2.2);
+    // 鼻孔
+    g.fillStyle(this.lerpColor(color, 0x000000, 0.45));
+    g.fillCircle(x - 2, y + 5, 1.8);
+    g.fillCircle(x + 2, y + 5, 1.8);
+  }
+
+  private drawGoblinSplit(g: Phaser.GameObjects.Graphics, x: number, y: number, r: number, color: number): void {
+    g.fillStyle(color);
+    g.fillCircle(x, y, r);
+    g.fillStyle(0xffee58);
+    g.fillCircle(x - 2, y - 1, 1.5);
+    g.fillCircle(x + 2, y - 1, 1.5);
+    g.fillStyle(0x1a1a1a);
+    g.fillCircle(x - 2, y - 1, 0.8);
+    g.fillCircle(x + 2, y - 1, 0.8);
   }
 
   private drawHpBar(): void {
