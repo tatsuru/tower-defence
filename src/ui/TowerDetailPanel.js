@@ -136,6 +136,9 @@ export class TowerDetailPanel {
         });
     }
     show(tower) {
+        if (this.selectedTower && this.selectedTower !== tower) {
+            this.selectedTower.showRangeCircle(false);
+        }
         this.selectedTower = tower;
         tower.showRangeCircle(true);
         this.render();

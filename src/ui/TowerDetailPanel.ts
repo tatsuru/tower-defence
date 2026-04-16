@@ -88,6 +88,9 @@ export class TowerDetailPanel {
   }
 
   show(tower: Tower): void {
+    if (this.selectedTower && this.selectedTower !== tower) {
+      this.selectedTower.showRangeCircle(false);
+    }
     this.selectedTower = tower;
     tower.showRangeCircle(true);
     this.render();

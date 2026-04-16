@@ -16,10 +16,11 @@ export class StatusBar {
         this.bg = scene.add.graphics();
         this.bg.fillStyle(0x0d0d1e);
         this.bg.fillRect(0, 0, SCREEN_WIDTH, STATUS_BAR_HEIGHT);
-        this.text = scene.add.text(12, 12, '', {
-            fontSize: '18px',
+        this.text = scene.add.text(12, 6, '', {
+            fontSize: '16px',
             color: '#ffffff',
             fontStyle: 'bold',
+            lineSpacing: 4,
         });
         this.update(state);
         state.subscribe(() => this.update(state));
@@ -30,6 +31,9 @@ export class StatusBar {
             : state.phase === 'wave'
                 ? `ウェーブ ${state.wave}`
                 : 'GAME OVER';
-        this.text.setText(`${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G    スコア: ${state.score.toLocaleString()}`);
+        this.text.setText([
+            `${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G`,
+            `スコア: ${state.score.toLocaleString()}`,
+        ]);
     }
 }
