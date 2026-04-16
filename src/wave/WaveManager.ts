@@ -22,6 +22,7 @@ export class WaveManager {
   private preparationMsRemaining: number = 0;
   private onWaveComplete: (() => void) | null = null;
   private callbacks: WaveManagerCallbacks;
+  autoAdvance: boolean = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -148,7 +149,7 @@ export class WaveManager {
     this.state.addScore(this.state.wave * 200);
     this.state.endWave();
     if (this.state.phase !== 'gameover') {
-      this.preparationMsRemaining = PREPARATION_SECONDS * 1000;
+      this.preparationMsRemaining = this.autoAdvance ? 2000 : PREPARATION_SECONDS * 1000;
       this.onWaveComplete?.();
     }
   }

@@ -20,6 +20,7 @@ export class Tower {
   private cooldownMs: number = 0;
   private graphics: Phaser.GameObjects.Graphics;
   private effectGraphics: Phaser.GameObjects.Graphics;
+  private rangeGraphics: Phaser.GameObjects.Graphics;
   private synergyGraphics: Phaser.GameObjects.Graphics;
   private scene: Phaser.Scene;
 
@@ -38,6 +39,7 @@ export class Tower {
 
     this.graphics = scene.add.graphics();
     this.effectGraphics = scene.add.graphics();
+    this.rangeGraphics = scene.add.graphics().setDepth(7);
     this.synergyGraphics = scene.add.graphics();
     this.drawSelf();
   }
@@ -216,17 +218,17 @@ export class Tower {
   }
 
   showRangeCircle(show: boolean): void {
-    const g = this.effectGraphics;
-    g.clear();
+    this.rangeGraphics.clear();
     if (show) {
-      g.lineStyle(1, 0xffffff, 0.35);
-      g.strokeCircle(this.centerX, this.centerY, this.rangePixels);
+      this.rangeGraphics.lineStyle(1, 0xffffff, 0.45);
+      this.rangeGraphics.strokeCircle(this.centerX, this.centerY, this.rangePixels);
     }
   }
 
   destroy(): void {
     this.graphics.destroy();
     this.effectGraphics.destroy();
+    this.rangeGraphics.destroy();
     this.synergyGraphics.destroy();
     const textKey = `tower_label_${this.col}_${this.row}`;
     this.scene.children.getByName(textKey)?.destroy();
