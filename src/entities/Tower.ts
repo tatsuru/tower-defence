@@ -11,6 +11,8 @@ export class Tower {
   readonly row: number;
   level: number = 0;
   totalCost: number;
+  totalDamageDealt: number = 0;
+  killCount: number = 0;
 
   private def: TowerDef;
   private cooldownMs: number = 0;
@@ -149,19 +151,30 @@ export class Tower {
     soundManager.playAttack(this.kind);
     const ld = this.levelDef;
     switch (this.def.attackType) {
-      case 'single':
-        target.takeDamage(this.calcDamage(ld.damage, target));
+      case 'single': {
+        const dealt = target.takeDamage(this.calcDamage(ld.damage, target));
+        this.totalDamageDealt += dealt;
+        if (target.isDead) this.killCount++;
         break;
+      }
       case 'area':
         enemies
           .filter((e) => !e.isDead && !e.hasReachedExit && this.inRange(e))
-          .forEach((e) => e.takeDamage(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1))));
+          .forEach((e) => {
+            const dealt = e.takeDamage(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1)));
+            this.totalDamageDealt += dealt;
+            if (e.isDead) this.killCount++;
+          });
         break;
-      case 'slow':
-        target.takeDamage(this.calcDamage(ld.damage, target));
+      case 'slow': {
+        const dealt = target.takeDamage(this.calcDamage(ld.damage, target));
+        this.totalDamageDealt += dealt;
+        if (target.isDead) this.killCount++;
         target.applySlow();
         break;
+      }
       case 'dot':
+        // DoTのダメージはEnemy側で経時処理されるため直接計上しない
         target.applyDot(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1)));
         break;
     }

@@ -21,7 +21,7 @@ export class TowerDetailPanel {
     const px = scene.scale.width - 200;
     const py = 52;
     const pw = 190;
-    const ph = 160;
+    const ph = 210;
 
     this.bg = scene.add.graphics();
     this.bg.fillStyle(0x0d0d1e, 0.9);
@@ -103,16 +103,24 @@ export class TowerDetailPanel {
       ? `${ld.range} → ${effectiveRange.toFixed(1)}マス`
       : `${ld.range}マス`;
 
+    // シナジー名を先頭に置くことで、以降の → がシナジー後の値だと分かる
     const synergyLine = hasBonus
-      ? `\n★ ${synergyLabels.join(' / ')}`
+      ? `★ ${synergyLabels.join('/')} (→はシナジー後)\n`
       : '';
+
+    const dmgLabel = def.attackType === 'dot' ? 'DoTダメージ' : 'ダメージ';
+    const killNote = def.attackType === 'dot' ? '' : ` / キル: ${tower.killCount}`;
+    const dmgStat = def.attackType === 'dot'
+      ? '(経時ダメージ・計上外)'
+      : `${tower.totalDamageDealt}${killNote}`;
 
     this.text.setText(
       `${def.name} [${levelNames[tower.level]}]\n` +
-      `ダメージ: ${fmtDmg}\n` +
+      synergyLine +
+      `${dmgLabel}: ${fmtDmg}\n` +
       `攻撃速度: ${fmtSpd}\n` +
-      `射程: ${fmtRange}` +
-      synergyLine,
+      `射程: ${fmtRange}\n` +
+      `累計: ${dmgStat}`,
     );
 
     const canUp = tower.canUpgrade();

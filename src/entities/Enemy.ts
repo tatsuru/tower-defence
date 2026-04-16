@@ -125,10 +125,13 @@ export class Enemy {
     }
   }
 
-  takeDamage(amount: number): void {
-    if (this.isDead) return;
-    this.hp = Math.max(0, this.hp - amount);
+  /** 実際に与えたダメージ量を返す */
+  takeDamage(amount: number): number {
+    if (this.isDead) return 0;
+    const actual = Math.min(amount, this.hp);
+    this.hp -= actual;
     if (this.hp === 0) this.isDead = true;
+    return actual;
   }
 
   applySlow(): void {
