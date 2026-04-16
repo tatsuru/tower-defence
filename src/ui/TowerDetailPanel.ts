@@ -96,6 +96,13 @@ export class TowerDetailPanel {
     this.render();
   }
 
+  /** クリック座標がパネル表示領域内かどうかを返す */
+  hitTest(x: number, y: number): boolean {
+    if (!this.selectedTower) return false;
+    return x >= this.px && x <= this.px + this.pw &&
+           y >= 52 && y <= 52 + 250;
+  }
+
   hide(): void {
     if (this.selectedTower) {
       this.selectedTower.showRangeCircle(false);
