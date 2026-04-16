@@ -8,9 +8,11 @@ export interface MapData {
   path: { col: number; row: number }[];
 }
 
-const MAX_RETRIES = 20;
-// 地形障害物が占める割合（多すぎると経路が見つからなくなる）
-const BLOCKED_RATIO = 0.12;
+const MAX_RETRIES = 30;
+const BLOCKED_RATIO = 0.08;
+const NUM_WAYPOINTS = 3;
+
+type Pos = { col: number; row: number };
 
 export class MapGenerator {
   generate(): MapData {
@@ -18,32 +20,91 @@ export class MapGenerator {
       const result = this.tryGenerate();
       if (result !== null) return result;
     }
-    // リトライ上限を超えた場合は障害物なしで生成（必ず経路が存在する）
     return this.tryGenerate(0)!;
   }
 
   private tryGenerate(blockedRatio = BLOCKED_RATIO): MapData | null {
     const grid = this.buildEmptyGrid();
 
-    const entranceRow = Math.floor(Math.random() * GRID_ROWS);
-    const exitRow = Math.floor(Math.random() * GRID_ROWS);
+    const entranceRow = 1 + Math.floor(Math.random() * (GRID_ROWS - 2));
+    const exitRow = 1 + Math.floor(Math.random() * (GRID_ROWS - 2));
 
-    this.placeBlocked(grid, blockedRatio, entranceRow, exitRow);
+    const waypoints = this.generateWaypoints(entranceRow, exitRow);
+
+    this.placeBlocked(grid, blockedRatio, entranceRow, exitRow, waypoints);
 
     grid[entranceRow][0].type = CellType.Entrance;
     grid[exitRow][GRID_COLS - 1].type = CellType.Exit;
 
-    const path = this.bfs(grid, entranceRow, exitRow);
-    if (path === null) return null;
+    // 入口 → WP1 → WP2 → ... → 出口 の各区間を BFS で繋ぐ
+    const checkpoints: Pos[] = [
+      { col: 0, row: entranceRow },
+      ...waypoints,
+      { col: GRID_COLS - 1, row: exitRow },
+    ];
 
-    for (const { col, row } of path) {
-      const cell = grid[row][col];
-      if (cell.type === CellType.Empty) {
-        cell.type = CellType.Path;
+    const fullPath: Pos[] = [];
+    for (let i = 0; i < checkpoints.length - 1; i++) {
+      const segment = this.bfsSegment(grid, checkpoints[i], checkpoints[i + 1]);
+      if (!segment || segment.length === 0) return null;
+
+      // 各セグメント終点以外を Path としてマーク（次区間が再利用しないよう）
+      for (let k = 0; k < segment.length - 1; k++) {
+        const { col, row } = segment[k];
+        if (grid[row][col].type === CellType.Empty) {
+          grid[row][col].type = CellType.Path;
+        }
+      }
+
+      if (i === 0) {
+        fullPath.push(...segment);
+      } else {
+        fullPath.push(...segment.slice(1));
       }
     }
 
-    return { grid, entranceRow, exitRow, path };
+    if (fullPath.length === 0) return null;
+
+    // 最終点も Path に
+    const last = fullPath[fullPath.length - 1];
+    if (grid[last.row][last.col].type === CellType.Empty) {
+      grid[last.row][last.col].type = CellType.Path;
+    }
+
+    return { grid, entranceRow, exitRow, path: fullPath };
+  }
+
+  /**
+   * ウェイポイントを生成する。
+   * 列方向は等分し、行方向は前の点から半分以上離れた位置を交互に選ぶことで
+   * 経路がグリッドを縦断するよう誘導する。
+   */
+  private generateWaypoints(entranceRow: number, _exitRow: number): Pos[] {
+    const segW = Math.floor(GRID_COLS / (NUM_WAYPOINTS + 1));
+    const waypoints: Pos[] = [];
+    const half = Math.floor(GRID_ROWS / 2);
+    let prevRow = entranceRow;
+
+    for (let i = 1; i <= NUM_WAYPOINTS; i++) {
+      // 列はセグメント幅 ± 1 でランダムにずらす
+      const col = Math.max(2, Math.min(GRID_COLS - 3, segW * i + Math.floor(Math.random() * 3) - 1));
+
+      // 行は前の点から上下どちらかに大きくずらす
+      let row: number;
+      if (prevRow < half) {
+        // 前が上半分 → 下半分から選ぶ
+        row = half + 1 + Math.floor(Math.random() * (GRID_ROWS - 3 - half));
+      } else {
+        // 前が下半分 → 上半分から選ぶ
+        row = 1 + Math.floor(Math.random() * (half - 1));
+      }
+      row = Math.max(1, Math.min(GRID_ROWS - 2, row));
+
+      waypoints.push({ col, row });
+      prevRow = row;
+    }
+
+    return waypoints;
   }
 
   private buildEmptyGrid(): Grid {
@@ -57,9 +118,26 @@ export class MapGenerator {
     return grid;
   }
 
-  private placeBlocked(grid: Grid, ratio: number, entranceRow: number, exitRow: number): void {
+  private placeBlocked(
+    grid: Grid,
+    ratio: number,
+    entranceRow: number,
+    exitRow: number,
+    waypoints: Pos[],
+  ): void {
     const total = GRID_COLS * GRID_ROWS;
     const count = Math.floor(total * ratio);
+
+    // ウェイポイント周辺 1 マスはブロック禁止
+    const forbidden = new Set<string>();
+    const key = (c: number, r: number) => `${c},${r}`;
+    for (const wp of waypoints) {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          forbidden.add(key(wp.col + dc, wp.row + dr));
+        }
+      }
+    }
 
     let placed = 0;
     let tries = 0;
@@ -68,10 +146,10 @@ export class MapGenerator {
       const col = Math.floor(Math.random() * GRID_COLS);
       const row = Math.floor(Math.random() * GRID_ROWS);
 
-      // 入口列・出口列・入口行・出口行の端は空けておく
       if (col === 0 || col === GRID_COLS - 1) continue;
       if (row === entranceRow && col <= 2) continue;
       if (row === exitRow && col >= GRID_COLS - 3) continue;
+      if (forbidden.has(key(col, row))) continue;
       if (grid[row][col].type !== CellType.Empty) continue;
 
       grid[row][col].type = CellType.Blocked;
@@ -80,19 +158,10 @@ export class MapGenerator {
   }
 
   /**
-   * BFS で入口から出口への最短経路を求める。
-   * 経路が存在しない場合は null を返す。
+   * 任意の 2 点間を BFS で繋ぐ。
+   * CellType.Path（前区間の経路）はゴール以外ブロック扱いにして経路の重複を防ぐ。
    */
-  private bfs(
-    grid: Grid,
-    entranceRow: number,
-    exitRow: number,
-  ): { col: number; row: number }[] | null {
-    type Pos = { col: number; row: number };
-
-    const startCol = 0;
-    const goalCol = GRID_COLS - 1;
-
+  private bfsSegment(grid: Grid, start: Pos, goal: Pos): Pos[] | null {
     const visited: boolean[][] = Array.from({ length: GRID_ROWS }, () =>
       new Array(GRID_COLS).fill(false),
     );
@@ -100,8 +169,8 @@ export class MapGenerator {
       new Array(GRID_COLS).fill(null),
     );
 
-    const queue: Pos[] = [{ col: startCol, row: entranceRow }];
-    visited[entranceRow][startCol] = true;
+    const queue: Pos[] = [{ ...start }];
+    visited[start.row][start.col] = true;
 
     const dirs: Pos[] = [
       { col: 1, row: 0 },
@@ -113,8 +182,14 @@ export class MapGenerator {
     while (queue.length > 0) {
       const cur = queue.shift()!;
 
-      if (cur.col === goalCol && cur.row === exitRow) {
-        return this.reconstructPath(prev, entranceRow, exitRow);
+      if (cur.col === goal.col && cur.row === goal.row) {
+        const path: Pos[] = [];
+        let c: Pos | null = { col: goal.col, row: goal.row };
+        while (c !== null) {
+          path.unshift({ ...c });
+          c = prev[c.row][c.col];
+        }
+        return path;
       }
 
       for (const d of dirs) {
@@ -123,7 +198,11 @@ export class MapGenerator {
 
         if (nc < 0 || nc >= GRID_COLS || nr < 0 || nr >= GRID_ROWS) continue;
         if (visited[nr][nc]) continue;
-        if (grid[nr][nc].type === CellType.Blocked) continue;
+
+        const type = grid[nr][nc].type;
+        if (type === CellType.Blocked) continue;
+        // 前区間の経路セルはゴール以外を通行禁止にして重複を防ぐ
+        if (type === CellType.Path && !(nc === goal.col && nr === goal.row)) continue;
 
         visited[nr][nc] = true;
         prev[nr][nc] = cur;
@@ -132,24 +211,6 @@ export class MapGenerator {
     }
 
     return null;
-  }
-
-  private reconstructPath(
-    prev: ({ col: number; row: number } | null)[][],
-    entranceRow: number,
-    exitRow: number,
-  ): { col: number; row: number }[] {
-    const path: { col: number; row: number }[] = [];
-    let cur: { col: number; row: number } | null = { col: GRID_COLS - 1, row: exitRow };
-
-    while (cur !== null) {
-      path.unshift(cur);
-      cur = prev[cur.row][cur.col];
-    }
-
-    // 開始点が入口かチェック
-    if (path[0].col !== 0 || path[0].row !== entranceRow) return [];
-    return path;
   }
 }
 
