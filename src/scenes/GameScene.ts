@@ -154,10 +154,9 @@ export class GameScene extends Phaser.Scene {
 
   private onGridClick(ptr: Phaser.Input.Pointer): void {
     const cell = this.pixelToCell(ptr.x, ptr.y);
-    if (!cell) {
-      this.detailPanel.hide();
-      return;
-    }
+    // グリッド外（UIパネル領域）のクリックは無視する
+    // グリッド内の空マスクリック時のみ詳細パネルを閉じる
+    if (!cell) return;
 
     const { col, row } = cell;
 

@@ -88,6 +88,13 @@ export class Tower {
     this.totalCost += this.levelDef.upgradeCost;
     this.level++;
     this.drawSelf();
+    this.scene.tweens.add({
+      targets: this.graphics,
+      scaleX: { from: 1.4, to: 1 },
+      scaleY: { from: 1.4, to: 1 },
+      duration: 220,
+      ease: 'Back.easeOut',
+    });
   }
 
   /** 配置変更時に GameScene から呼ばれる */
@@ -263,19 +270,40 @@ export class Tower {
     const cy = this.centerY;
     const half = (CELL_SIZE * ld.size) / 2;
 
+    // Lv3: 外周グローリング（本体より外側）
+    if (this.level >= 2) {
+      g.lineStyle(3, ld.color, 0.6);
+      g.strokeCircle(cx, cy, half + 5);
+      g.lineStyle(1, 0xffffff, 0.5);
+      g.strokeCircle(cx, cy, half + 5);
+    }
+
+    // ベース本体
     g.fillStyle(ld.color);
     g.fillRect(cx - half, cy - half, half * 2, half * 2);
 
+    // Lv2以上: 白枠 + 4コーナードット
     if (this.level >= 1) {
-      g.lineStyle(2, 0xffffff, 0.5);
-      g.strokeRect(cx - half + 3, cy - half + 3, (half - 3) * 2, (half - 3) * 2);
-    }
-    if (this.level >= 2) {
-      g.fillStyle(0xffffff, 0.6);
-      g.fillTriangle(cx, cy - 6, cx + 6, cy, cx, cy + 6);
-      g.fillTriangle(cx, cy - 6, cx - 6, cy, cx, cy + 6);
+      g.lineStyle(2, 0xffffff, 0.8);
+      g.strokeRect(cx - half, cy - half, half * 2, half * 2);
+      const r = 3;
+      const m = r + 1;
+      g.fillStyle(0xffffff, 0.9);
+      g.fillCircle(cx - half + m, cy - half + m, r);
+      g.fillCircle(cx + half - m, cy - half + m, r);
+      g.fillCircle(cx - half + m, cy + half - m, r);
+      g.fillCircle(cx + half - m, cy + half - m, r);
     }
 
+    // Lv3: 中央ダイヤモンド
+    if (this.level >= 2) {
+      const ds = 6;
+      g.fillStyle(0xffffff, 0.85);
+      g.fillTriangle(cx, cy - ds, cx + ds, cy, cx - ds, cy);
+      g.fillTriangle(cx, cy + ds, cx + ds, cy, cx - ds, cy);
+    }
+
+    // アイコンテキスト（初回のみ生成）
     const icons: Record<string, string> = {
       archer: '弓', mage: '魔', cannon: '砲', ice: '氷', fire: '炎',
     };
@@ -288,7 +316,18 @@ export class Tower {
           fontStyle: 'bold',
         })
         .setOrigin(0.5)
+        .setDepth(5)
         .setName(textKey);
+    }
+
+    // レベルインジケーター（左下隅に1〜3個のドット）
+    const dotR = 2;
+    const dotSpacing = 6;
+    const dotsStartX = cx - half + 4;
+    const dotsY = cy + half - 4;
+    for (let i = 0; i < 3; i++) {
+      g.fillStyle(i <= this.level ? 0xffd700 : 0x333333, i <= this.level ? 1 : 0.5);
+      g.fillCircle(dotsStartX + i * dotSpacing, dotsY, dotR);
     }
   }
 }
