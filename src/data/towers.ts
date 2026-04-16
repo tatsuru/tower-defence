@@ -128,5 +128,5 @@ export const DOT_DURATION_MS = 3000;
 
 /** 同種タワーの n 本目の設置コスト（逓増） */
 export function scaledCost(baseCost: number, sameTypeCount: number): number {
-  return Math.floor(baseCost * (1 + 0.25 * sameTypeCount));
+  return Math.floor(baseCost * (1 + 0.10 * sameTypeCount));
 }

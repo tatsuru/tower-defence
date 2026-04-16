@@ -175,7 +175,7 @@ export class TowerPanel {
         btn.lineStyle(2, borderColor);
         btn.strokeRoundedRect(bx, by, BUTTON_W, BUTTON_H, 6);
         nameText.setColor(affordable ? '#ffffff' : '#555555');
-        const costLabel = count > 0 ? `${cost}G (+${count * 25}%)` : `${cost}G`;
+        const costLabel = count > 0 ? `${cost}G (+${count * 10}%)` : `${cost}G`;
         costText.setText(costLabel).setColor(affordable ? '#ffd700' : '#555500').setVisible(true);
         lockText.setVisible(false);
       }
