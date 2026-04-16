@@ -54,7 +54,9 @@ export class GameOverOverlay {
 
     state.subscribe(() => {
       if (state.phase === 'gameover') {
-        this.scoreText.setText(`生存ウェーブ数: ${state.wave}`);
+        this.scoreText.setText(
+          `生存ウェーブ数: ${state.wave}\nスコア: ${state.score.toLocaleString()}`,
+        );
         this.setVisible(true);
       }
     });

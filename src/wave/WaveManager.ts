@@ -145,6 +145,7 @@ export class WaveManager {
   }
 
   private handleWaveEnd(): void {
+    this.state.addScore(this.state.wave * 200);
     this.state.endWave();
     if (this.state.phase !== 'gameover') {
       this.preparationMsRemaining = PREPARATION_SECONDS * 1000;

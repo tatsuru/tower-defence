@@ -4,6 +4,7 @@ import { TowerDef, TowerKind, TowerLevelDef } from '../data/towers';
 import { SYNERGY_DEFS, SynergyBonus, findSynergy, mergeBonuses } from '../data/synergies';
 import { Enemy } from './Enemy';
 import { soundManager } from '../audio/SoundManager';
+import { GameState } from '../state/GameState';
 
 export class Tower {
   readonly kind: TowerKind;
@@ -15,6 +16,7 @@ export class Tower {
   killCount: number = 0;
 
   private def: TowerDef;
+  private state: GameState;
   private cooldownMs: number = 0;
   private graphics: Phaser.GameObjects.Graphics;
   private effectGraphics: Phaser.GameObjects.Graphics;
@@ -25,8 +27,9 @@ export class Tower {
   private synergyBonus: SynergyBonus = {};
   private synergyLabels: string[] = [];
 
-  constructor(scene: Phaser.Scene, def: TowerDef, col: number, row: number) {
+  constructor(scene: Phaser.Scene, state: GameState, def: TowerDef, col: number, row: number) {
     this.scene = scene;
+    this.state = state;
     this.def = def;
     this.kind = def.kind;
     this.col = col;
@@ -154,7 +157,8 @@ export class Tower {
       case 'single': {
         const dealt = target.takeDamage(this.calcDamage(ld.damage, target));
         this.totalDamageDealt += dealt;
-        if (target.isDead) this.killCount++;
+        this.state.addScore(dealt);
+        if (target.isDead) { this.killCount++; this.state.addScore(100); }
         break;
       }
       case 'area':
@@ -163,13 +167,15 @@ export class Tower {
           .forEach((e) => {
             const dealt = e.takeDamage(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1)));
             this.totalDamageDealt += dealt;
-            if (e.isDead) this.killCount++;
+            this.state.addScore(dealt);
+            if (e.isDead) { this.killCount++; this.state.addScore(100); }
           });
         break;
       case 'slow': {
         const dealt = target.takeDamage(this.calcDamage(ld.damage, target));
         this.totalDamageDealt += dealt;
-        if (target.isDead) this.killCount++;
+        this.state.addScore(dealt);
+        if (target.isDead) { this.killCount++; this.state.addScore(100); }
         target.applySlow();
         break;
       }

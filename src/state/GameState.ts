@@ -7,6 +7,7 @@ export class GameState {
   lives: number = INITIAL_LIVES;
   wave: number = 0;         // 現在のウェーブ番号（準備中は次のウェーブ番号）
   phase: Phase = 'preparation';
+  score: number = 0;
 
   // イベント購読（値変化時に呼ばれるコールバック）
   private listeners = new Set<() => void>();
@@ -18,6 +19,11 @@ export class GameState {
 
   private notify(): void {
     this.listeners.forEach((fn) => fn());
+  }
+
+  addScore(points: number): void {
+    this.score += points;
+    this.notify();
   }
 
   addGold(amount: number): void {
@@ -55,6 +61,7 @@ export class GameState {
     this.gold = INITIAL_GOLD;
     this.lives = INITIAL_LIVES;
     this.wave = 0;
+    this.score = 0;
     this.phase = 'preparation';
     this.notify();
   }

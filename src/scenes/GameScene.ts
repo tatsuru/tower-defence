@@ -128,18 +128,28 @@ export class GameScene extends Phaser.Scene {
 
     const { col, row } = cell;
     const gridCell = this.mapData.grid[row][col];
+    const kind = this.towerPanel.selectedKind;
     const canPlace =
       isBuildable(gridCell) &&
-      this.towerPanel.selectedKind !== null &&
+      kind !== null &&
       !this.towers.some((t) => t.col === col && t.row === row);
 
     const color = canPlace ? 0x88ff88 : 0xff8888;
-    const alpha = 0.3;
     const x = GRID_OFFSET_X + col * CELL_SIZE;
     const y = GRID_OFFSET_Y + row * CELL_SIZE;
 
-    this.hoverGraphics.fillStyle(color, alpha);
+    this.hoverGraphics.fillStyle(color, 0.3);
     this.hoverGraphics.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+    // タワー選択中は配置予定位置の攻撃範囲を表示
+    if (kind) {
+      const def = TOWER_DEFS[kind];
+      const rangePixels = def.levels[0].range * CELL_SIZE;
+      const cx = x + CELL_SIZE / 2;
+      const cy = y + CELL_SIZE / 2;
+      this.hoverGraphics.lineStyle(1, def.levels[0].color, 0.7);
+      this.hoverGraphics.strokeCircle(cx, cy, rangePixels);
+    }
   }
 
   private onGridClick(ptr: Phaser.Input.Pointer): void {
@@ -186,7 +196,7 @@ export class GameScene extends Phaser.Scene {
     const def = TOWER_DEFS[kind];
     if (!this.state.spendGold(def.cost)) return;
 
-    const tower = new Tower(this, def, col, row);
+    const tower = new Tower(this, this.state, def, col, row);
     this.towers.push(tower);
     this.mapData.grid[row][col].type = CellType.Blocked;
     this.recalcAllSynergies();

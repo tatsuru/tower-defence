@@ -30,7 +30,7 @@ export class StatusBar {
           : 'GAME OVER';
 
     this.text.setText(
-      `${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G`,
+      `${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G    スコア: ${state.score.toLocaleString()}`,
     );
   }
 }

@@ -7,12 +7,20 @@ export const SELL_REFUND_RATE = 0.6;
 
 export class TowerDetailPanel {
   private bg: Phaser.GameObjects.Graphics;
+  private btnGraphics: Phaser.GameObjects.Graphics;
   private text: Phaser.GameObjects.Text;
   private upgradeLabel: Phaser.GameObjects.Text;
   private sellLabel: Phaser.GameObjects.Text;
   private selectedTower: Tower | null = null;
   private state: GameState;
   private onSell: (tower: Tower) => void;
+
+  // ボタン領域の定数（constructor 内で設定）
+  private readonly px: number;
+  private readonly pw: number;
+  private readonly upgBtnY: number;
+  private readonly sellBtnY: number;
+  private readonly btnH = 28;
 
   constructor(scene: Phaser.Scene, state: GameState, onSell: (tower: Tower) => void) {
     this.state = state;
@@ -21,14 +29,30 @@ export class TowerDetailPanel {
     const px = scene.scale.width - 200;
     const py = 52;
     const pw = 190;
-    const ph = 210;
+    const ph = 250;
+    const btnH = this.btnH;
+    const sellBtnY = py + ph - 10 - btnH;
+    const upgBtnY = sellBtnY - 8 - btnH;
+
+    this.px = px;
+    this.pw = pw;
+    this.upgBtnY = upgBtnY;
+    this.sellBtnY = sellBtnY;
 
     this.bg = scene.add.graphics();
     this.bg.fillStyle(0x0d0d1e, 0.9);
     this.bg.fillRoundedRect(px, py, pw, ph, 6);
     this.bg.lineStyle(1, 0x445566);
     this.bg.strokeRoundedRect(px, py, pw, ph, 6);
+    // 区切り線
+    this.bg.lineStyle(1, 0x334455, 0.8);
+    this.bg.beginPath();
+    this.bg.moveTo(px + 10, upgBtnY - 8);
+    this.bg.lineTo(px + pw - 10, upgBtnY - 8);
+    this.bg.strokePath();
     this.bg.setVisible(false);
+
+    this.btnGraphics = scene.add.graphics().setVisible(false);
 
     this.text = scene.add
       .text(px + 10, py + 8, '', { fontSize: '12px', color: '#ffffff', lineSpacing: 4 })
@@ -36,24 +60,24 @@ export class TowerDetailPanel {
 
     // 強化ボタン
     this.upgradeLabel = scene.add
-      .text(px + pw / 2, py + ph - 52, '', { fontSize: '13px', color: '#ffd700', fontStyle: 'bold' })
+      .text(px + pw / 2, upgBtnY + btnH / 2, '', { fontSize: '13px', color: '#ffd700', fontStyle: 'bold' })
       .setOrigin(0.5)
       .setVisible(false);
 
     scene.add
-      .zone(px + 10, py + ph - 66, pw - 20, 26)
+      .zone(px + 10, upgBtnY, pw - 20, btnH)
       .setOrigin(0, 0)
       .setInteractive()
       .on('pointerdown', () => this.onUpgradeClick());
 
     // 売却ボタン
     this.sellLabel = scene.add
-      .text(px + pw / 2, py + ph - 20, '', { fontSize: '12px', color: '#ff9999' })
+      .text(px + pw / 2, sellBtnY + btnH / 2, '', { fontSize: '12px', color: '#ffaaaa' })
       .setOrigin(0.5)
       .setVisible(false);
 
     scene.add
-      .zone(px + 10, py + ph - 34, pw - 20, 26)
+      .zone(px + 10, sellBtnY, pw - 20, btnH)
       .setOrigin(0, 0)
       .setInteractive()
       .on('pointerdown', () => this.onSellClick());
@@ -75,6 +99,7 @@ export class TowerDetailPanel {
       this.selectedTower = null;
     }
     this.bg.setVisible(false);
+    this.btnGraphics.setVisible(false);
     this.text.setVisible(false);
     this.upgradeLabel.setVisible(false);
     this.sellLabel.setVisible(false);
@@ -135,7 +160,27 @@ export class TowerDetailPanel {
 
     this.sellLabel.setText(`売却 +${refund}G`);
 
+    // ボタン背景を再描画
+    const px = this.px;
+    const pw = this.pw;
+    const btnW = pw - 20;
+    const btnH = this.btnH;
+
+    this.btnGraphics.clear();
+    const upgFill = canUp && canPay ? 0x2a1e00 : 0x1a1a1a;
+    const upgBorder = canUp && canPay ? 0xffd700 : 0x444444;
+    this.btnGraphics.fillStyle(upgFill);
+    this.btnGraphics.fillRoundedRect(px + 10, this.upgBtnY, btnW, btnH, 4);
+    this.btnGraphics.lineStyle(1, upgBorder, 0.9);
+    this.btnGraphics.strokeRoundedRect(px + 10, this.upgBtnY, btnW, btnH, 4);
+
+    this.btnGraphics.fillStyle(0x1a0000);
+    this.btnGraphics.fillRoundedRect(px + 10, this.sellBtnY, btnW, btnH, 4);
+    this.btnGraphics.lineStyle(1, 0xcc4444, 0.9);
+    this.btnGraphics.strokeRoundedRect(px + 10, this.sellBtnY, btnW, btnH, 4);
+
     this.bg.setVisible(true);
+    this.btnGraphics.setVisible(true);
     this.text.setVisible(true);
     this.upgradeLabel.setVisible(true);
     this.sellLabel.setVisible(true);
