@@ -247,9 +247,13 @@ export class GameScene extends Phaser.Scene {
 
   private recalcAllSynergies(): void {
     for (const tower of this.towers) {
-      const neighbors = this.towers.filter(
-        (t) => t !== tower && Math.abs(t.col - tower.col) <= 1 && Math.abs(t.row - tower.row) <= 1,
-      );
+      const neighbors = this.towers.filter((t) => {
+        if (t === tower) return false;
+        const dist = Math.max(Math.abs(t.col - tower.col), Math.abs(t.row - tower.row));
+        // 支援塔はレベルに応じてオーラ範囲が広がる（range フィールドを使用）
+        if (t.kind === 'support') return dist <= t.levelDef.range;
+        return dist <= 1;
+      });
       tower.recalcSynergy(neighbors);
     }
   }

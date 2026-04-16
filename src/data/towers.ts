@@ -96,11 +96,11 @@ export const TOWER_DEFS: Record<TowerKind, TowerDef> = {
   support: {
     kind: 'support', name: '支援塔', cost: 120, unlockedWave: 12,
     attackType: 'support',
-    description: '攻撃しない。隣接タワーの攻速+20%（Lv2→+25%/Lv3→+30%）。',
+    description: '攻撃しない。周囲タワーの攻速+20%。Lv2→範囲2マス+25%。Lv3→範囲3マス+30%/ダメージ×1.1。',
     levels: [
       { damage: 0, attacksPerSecond: 0, range: 1, upgradeCost: 90,  color: 0x81c784, size: 0.50 },
-      { damage: 0, attacksPerSecond: 0, range: 1, upgradeCost: 130, color: 0x4caf50, size: 0.56 },
-      { damage: 0, attacksPerSecond: 0, range: 1, upgradeCost: 0,   color: 0x2e7d32, size: 0.62 },
+      { damage: 0, attacksPerSecond: 0, range: 2, upgradeCost: 130, color: 0x4caf50, size: 0.56 },
+      { damage: 0, attacksPerSecond: 0, range: 3, upgradeCost: 0,   color: 0x2e7d32, size: 0.62 },
     ],
   },
   ballista: {

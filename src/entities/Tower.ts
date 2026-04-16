@@ -107,8 +107,12 @@ export class Tower {
     for (const nb of neighbors) {
       // 支援塔のオーラ：隣接全タワーに攻速ボーナス（支援塔自身は除く）
       if (nb.kind === 'support' && this.kind !== 'support') {
-        const auraValues = [1.20, 1.25, 1.30];
-        bonuses.push({ attackSpeedMultiplier: auraValues[nb.level] ?? 1.20 });
+        const auraSpeed  = [1.20, 1.25, 1.30];
+        const auraDamage = [1.00, 1.00, 1.10];
+        bonuses.push({
+          attackSpeedMultiplier: auraSpeed[nb.level] ?? 1.20,
+          damageMultiplier: auraDamage[nb.level] ?? 1.00,
+        });
         if (!labels.includes('支援')) labels.push('支援');
         continue;
       }
