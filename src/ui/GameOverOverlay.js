@@ -1,4 +1,5 @@
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from '../constants';
+import { loadHighScore, saveHighScore } from '../data/highScore';
 export class GameOverOverlay {
     constructor(scene, state, onRestart) {
         Object.defineProperty(this, "bg", {
@@ -72,7 +73,16 @@ export class GameOverOverlay {
         this.setVisible(false);
         state.subscribe(() => {
             if (state.phase === 'gameover') {
-                this.scoreText.setText(`生存ウェーブ数: ${state.wave}\nスコア: ${state.score.toLocaleString()}`);
+                const isNew = saveHighScore(state.score);
+                const hi = loadHighScore();
+                const lines = [
+                    `生存ウェーブ数: ${state.wave}`,
+                    `スコア: ${state.score.toLocaleString()}`,
+                    isNew
+                        ? 'ハイスコア更新!'
+                        : `ハイスコア: ${hi.toLocaleString()}`,
+                ];
+                this.scoreText.setText(lines);
                 this.setVisible(true);
             }
         });
