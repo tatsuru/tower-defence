@@ -120,9 +120,12 @@ export class TowerDetailPanel {
     const synergyLabels = tower.activeSynergyLabels;
     const hasBonus = synergyLabels.length > 0;
 
-    const fmtDmg = hasBonus
-      ? `${ld.damage} → ${tower.effectiveDamage}`
-      : `${ld.damage}`;
+    const isDotPercent = def.attackType === 'dot';
+    const fmtDmg = isDotPercent
+      ? `${ld.damage.toFixed(1)}%/tick`
+      : hasBonus
+        ? `${ld.damage} → ${tower.effectiveDamage}`
+        : `${ld.damage}`;
     const fmtSpd = hasBonus
       ? `${ld.attacksPerSecond.toFixed(1)} → ${tower.effectiveAttacksPerSecond.toFixed(1)}/s`
       : `${ld.attacksPerSecond.toFixed(1)}/s`;
@@ -136,7 +139,7 @@ export class TowerDetailPanel {
       ? `★ ${synergyLabels.join('/')} (→はシナジー後)\n`
       : '';
 
-    const dmgLabel = def.attackType === 'dot' ? 'DoTダメージ' : 'ダメージ';
+    const dmgLabel = isDotPercent ? 'DoT(最大HP%)' : 'ダメージ';
     const killNote = def.attackType === 'dot' ? '' : ` / キル: ${tower.killCount}`;
     const dmgStat = def.attackType === 'dot'
       ? '(経時ダメージ・計上外)'

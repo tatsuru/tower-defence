@@ -153,6 +153,12 @@ export class Enemy {
     }
   }
 
+  applyPercentDot(percentPerTick: number): void {
+    // 最大HPの%をフラットダメージに変換してDoTとして適用
+    const damagePerTick = Math.max(1, Math.round(this.maxHp * percentPerTick / 100));
+    this.applyDot(damagePerTick);
+  }
+
   isSlowed(): boolean {
     return this.slowMsRemaining > 0;
   }

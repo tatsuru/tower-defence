@@ -65,11 +65,11 @@ export const TOWER_DEFS: Record<TowerKind, TowerDef> = {
   fire: {
     kind: 'fire', name: '炎の塔', cost: 90, unlockedWave: 0,
     attackType: 'dot',
-    description: '継続ダメージ（DoT）を与える。',
+    description: '継続ダメージ（最大HPの1〜2%/tick）。高HP敵に有効。',
     levels: [
-      { damage: 4,  attacksPerSecond: 2.0, range: 2,   upgradeCost: 70,  color: 0xff7043, size: 0.45 },
-      { damage: 7,  attacksPerSecond: 2.5, range: 2.5, upgradeCost: 100, color: 0xe64a19, size: 0.52 },
-      { damage: 12, attacksPerSecond: 3.0, range: 3,   upgradeCost: 0,   color: 0xbf360c, size: 0.60 },
+      { damage: 1.0, attacksPerSecond: 2.0, range: 2,   upgradeCost: 70,  color: 0xff7043, size: 0.45 },
+      { damage: 1.5, attacksPerSecond: 2.5, range: 2.5, upgradeCost: 100, color: 0xe64a19, size: 0.52 },
+      { damage: 2.0, attacksPerSecond: 3.0, range: 3,   upgradeCost: 0,   color: 0xbf360c, size: 0.60 },
     ],
   },
   thunder: {

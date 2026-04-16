@@ -205,7 +205,7 @@ export class Tower {
         break;
       }
       case 'dot':
-        target.applyDot(Math.round(ld.damage * (this.synergyBonus.damageMultiplier ?? 1)));
+        target.applyPercentDot(ld.damage * (this.synergyBonus.damageMultiplier ?? 1));
         break;
       case 'chain': {
         // 1撃目
