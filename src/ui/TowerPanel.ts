@@ -93,11 +93,14 @@ export class TowerPanel {
           this.updateInfo();
         })
         .on('pointerdown', () => {
-          if (state.gold >= def.cost) {
-            this.selectedKind = this.selectedKind === kind ? null : kind;
-            this.render(state);
-            this.updateInfo();
+          if (this.selectedKind === kind) {
+            // 選択済みを再クリック → 解除
+            this.selectedKind = null;
+          } else if (state.gold >= def.cost) {
+            this.selectedKind = kind;
           }
+          this.render(state);
+          this.updateInfo();
         });
     });
 
