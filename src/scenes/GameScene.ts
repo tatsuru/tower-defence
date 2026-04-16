@@ -3,7 +3,7 @@ import { CELL_SIZE, GRID_COLS, GRID_OFFSET_X, GRID_OFFSET_Y, GRID_ROWS } from '.
 import { CellType } from '../types';
 import { MapGenerator } from '../map/MapGenerator';
 import { Tower } from '../entities/Tower';
-import { TOWER_DEFS, TowerKind } from '../data/towers';
+import { TOWER_DEFS, TowerKind, scaledCost, ADVANCED_TOWER_KINDS } from '../data/towers';
 import { GameState } from '../state/GameState';
 import { WaveManager } from '../wave/WaveManager';
 import { StatusBar } from '../ui/StatusBar';
@@ -66,7 +66,7 @@ export class GameScene extends Phaser.Scene {
       this,
       this.state,
       this.mapData.path,
-      () => { /* ウェーブ完了時の追加処理があればここに */ },
+      () => { this.onWaveComplete(); },
       {
         onWaveStart: (wave) => {
           this.waveBanner.show(wave);
@@ -84,7 +84,11 @@ export class GameScene extends Phaser.Scene {
     );
 
     new StatusBar(this, this.state);
-    this.towerPanel = new TowerPanel(this, this.state);
+    this.towerPanel = new TowerPanel(
+      this,
+      this.state,
+      (kind) => this.towers.filter((t) => t.kind === kind).length,
+    );
     this.detailPanel = new TowerDetailPanel(this, this.state, (tower) => this.sellTower(tower));
     this.prepOverlay = new PreparationOverlay(this, this.state, this.waveManager);
     new GameOverOverlay(this, this.state, () => this.restartGame());
@@ -193,9 +197,12 @@ export class GameScene extends Phaser.Scene {
     if (this.towers.some((t) => t.col === col && t.row === row)) return;
 
     const def = TOWER_DEFS[kind];
-    if (!this.state.spendGold(def.cost)) return;
+    const sameTypeCount = this.towers.filter((t) => t.kind === kind).length;
+    const cost = scaledCost(def.cost, sameTypeCount);
+    if (!this.state.spendGold(cost)) return;
 
     const tower = new Tower(this, this.state, def, col, row);
+    tower.totalCost = cost;
     this.towers.push(tower);
     this.mapData.grid[row][col].type = CellType.Blocked;
     this.recalcAllSynergies();
@@ -207,6 +214,34 @@ export class GameScene extends Phaser.Scene {
       scaleY: { from: 0.5, to: 1 },
       duration: 150,
       ease: 'Back.easeOut',
+    });
+  }
+
+  private onWaveComplete(): void {
+    const wave = this.state.wave;
+    for (const kind of ADVANCED_TOWER_KINDS) {
+      const def = TOWER_DEFS[kind];
+      if (def.unlockedWave === wave) {
+        this.showUnlockBanner(def.name);
+      }
+    }
+  }
+
+  private showUnlockBanner(name: string): void {
+    const text = this.add.text(
+      this.scale.width / 2,
+      this.scale.height / 2 - 60,
+      `解放: ${name}`,
+      { fontSize: '20px', color: '#ffdd44', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 },
+    ).setOrigin(0.5).setDepth(200);
+
+    this.tweens.add({
+      targets: text,
+      y: text.y - 40,
+      alpha: { from: 1, to: 0 },
+      duration: 2200,
+      ease: 'Cubic.easeIn',
+      onComplete: () => text.destroy(),
     });
   }
 

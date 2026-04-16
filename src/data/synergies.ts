@@ -16,6 +16,17 @@ export interface SynergyDef {
 }
 
 export const SYNERGY_DEFS: SynergyDef[] = [
+  // ── 新タワーのシナジー ──────────────────────────────────────────
+  // 雷砲: 雷+砲台 → 両方ダメージ×1.3
+  { kinds: ['thunder', 'cannon'], label: '雷砲', bonus: { damageMultiplier: 1.3 }, target: 'both' },
+  { kinds: ['cannon', 'thunder'], label: '雷砲', bonus: { damageMultiplier: 1.3 }, target: 'both' },
+  // 射撃統制: 狙撃+弓兵 → 射程+0.5、攻速×1.15
+  { kinds: ['sniper', 'archer'], label: '射撃統制', bonus: { rangeBonus: 0.5, attackSpeedMultiplier: 1.15 }, target: 'both' },
+  { kinds: ['archer', 'sniper'], label: '射撃統制', bonus: { rangeBonus: 0.5, attackSpeedMultiplier: 1.15 }, target: 'both' },
+  // 貫通砲: バリスタ+砲台 → 両方ダメージ×1.35
+  { kinds: ['ballista', 'cannon'], label: '貫通砲', bonus: { damageMultiplier: 1.35 }, target: 'both' },
+  { kinds: ['cannon', 'ballista'], label: '貫通砲', bonus: { damageMultiplier: 1.35 }, target: 'both' },
+
   {
     kinds: ['ice', 'fire'],
     label: '凍炎',
@@ -120,11 +131,15 @@ export function getSynergyHints(kind: TowerKind): string[] {
 }
 
 const TOWER_NAMES: Record<TowerKind, string> = {
-  archer: '弓兵塔',
-  mage:   '魔法塔',
-  cannon: '砲台',
-  ice:    '氷の塔',
-  fire:   '炎の塔',
+  archer:   '弓兵塔',
+  mage:     '魔法塔',
+  cannon:   '砲台',
+  ice:      '氷の塔',
+  fire:     '炎の塔',
+  thunder:  '雷の塔',
+  sniper:   '狙撃塔',
+  support:  '支援塔',
+  ballista: 'バリスタ',
 };
 
 /** 複数の隣接タワーからシナジーをまとめて合算する */
