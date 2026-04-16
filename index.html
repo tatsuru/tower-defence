@@ -5,23 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fantasy Tower Defense</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
         background: #1a1a2e;
         display: flex;
         flex-direction: column;
         align-items: center;
-        min-height: 100vh;
-        overflow-x: hidden;
       }
+      #game canvas { display: block; }
       #changelog {
         width: 100%;
         max-width: 840px;
-        padding: 32px 24px 48px;
+        padding: 28px 24px 48px;
         color: #8899aa;
         font-family: sans-serif;
         font-size: 13px;
@@ -29,31 +24,30 @@
       }
       #changelog h2 {
         color: #4488aa;
-        font-size: 14px;
+        font-size: 13px;
         letter-spacing: 0.1em;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         border-bottom: 1px solid #223344;
-        padding-bottom: 8px;
+        padding-bottom: 6px;
       }
-      #changelog .entry {
-        margin-bottom: 20px;
-      }
-      #changelog .date {
-        color: #556677;
-        font-size: 11px;
-        margin-bottom: 4px;
-      }
-      #changelog ul {
-        list-style: none;
-        padding-left: 12px;
-      }
-      #changelog ul li::before {
-        content: '- ';
+      .entry { margin-bottom: 16px; }
+      .date { color: #556677; font-size: 11px; margin-bottom: 2px; }
+      ul { list-style: none; padding-left: 12px; }
+      ul li::before { content: '- '; color: #445566; }
+      details { margin-top: 12px; }
+      summary {
         color: #445566;
+        font-size: 12px;
+        cursor: pointer;
+        user-select: none;
+        padding: 4px 0;
       }
+      summary:hover { color: #6688aa; }
+      details .entry { margin-top: 12px; }
     </style>
   </head>
   <body>
+    <div id="game"></div>
     <script type="module" src="/src/main.ts"></script>
 
     <div id="changelog">
@@ -63,8 +57,7 @@
         <div class="date">2026-04-16</div>
         <ul>
           <li>敵のビジュアルを刷新（ゴブリン・オーク・ドラゴンそれぞれ固有の外見に）</li>
-          <li>支援塔のレベルアップで効果範囲が広がるように変更（Lv1:1マス→Lv2:2マス→Lv3:3マス）</li>
-          <li>支援塔Lv3にダメージ×1.1ボーナスを追加</li>
+          <li>支援塔のレベルアップで効果範囲が拡大（Lv1:1マス→Lv2:2マス→Lv3:3マス）、Lv3にダメージ×1.1を追加</li>
           <li>詳細パネルを開いたまま強化を連続実行できるよう修正</li>
           <li>炎の塔のDoTを最大HPの%ダメージに変更（Lv1:1%→Lv3:2%/tick）</li>
         </ul>
@@ -74,25 +67,27 @@
         <div class="date">2026-04-15</div>
         <ul>
           <li>雷の塔・狙撃塔・支援塔・バリスタの4種を追加（ウェーブ5/8/12/16で順次解放）</li>
-          <li>同じ種類のタワーを複数建てるとコストが増加するよう変更（+10%/本）</li>
+          <li>同種タワーを複数建てるとコストが増加（+10%/本）</li>
           <li>新シナジー追加: 雷砲・射撃統制・貫通砲</li>
-          <li>ハイスコアをブラウザに保存するように変更</li>
-          <li>タワー選択中に射程プレビューを表示</li>
+          <li>ハイスコアをブラウザに保存</li>
         </ul>
       </div>
 
-      <div class="entry">
-        <div class="date">2026-04-14</div>
-        <ul>
-          <li>経路生成を蛇行ルートに変更</li>
-          <li>タワー強化後の見た目を改善（レベル別に外観が変化）</li>
-          <li>自動進行モードを追加（準備時間を短縮して放置プレイに対応）</li>
-          <li>次ウェーブの出現ユニット一覧をプレビュー表示</li>
-          <li>タワーの累計ダメージ・キル数を詳細パネルに表示</li>
-          <li>敵ホバーで情報ツールチップを表示</li>
-          <li>累計スコアを追加</li>
-        </ul>
-      </div>
+      <details>
+        <summary>過去の更新を見る</summary>
+        <div class="entry">
+          <div class="date">2026-04-14</div>
+          <ul>
+            <li>経路生成を蛇行ルートに変更</li>
+            <li>タワー強化後の見た目を改善（レベル別に外観が変化）</li>
+            <li>自動進行モードを追加</li>
+            <li>次ウェーブの出現ユニット一覧をプレビュー表示</li>
+            <li>タワーの累計ダメージ・キル数を詳細パネルに表示</li>
+            <li>敵ホバーで情報ツールチップを表示</li>
+            <li>累計スコアを追加</li>
+          </ul>
+        </div>
+      </details>
 
     </div>
   </body>
