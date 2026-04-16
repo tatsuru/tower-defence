@@ -42,8 +42,8 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     kind: 'dragon',
     name: 'ドラゴン',
     baseHp: 1200,
-    speed: 2.0,
-    reward: 50,
+    speed: 1.2,
+    reward: 100,
     traits: [],
     color: 0xef5350,
     radius: 18,
@@ -89,5 +89,5 @@ export type SpawnableEnemyKey = 'goblin' | 'orc' | 'dragon' | 'armored_orc' | 's
 export const ALL_ENEMY_DEFS = ENEMY_DEFS as Record<string, EnemyDef>;
 
 export function scaleHp(baseHp: number, wave: number): number {
-  return Math.round(baseHp * Math.pow(1.10, wave - 1));
+  return Math.round(baseHp * Math.pow(1.13, wave - 1));
 }

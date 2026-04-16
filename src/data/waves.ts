@@ -13,9 +13,11 @@ export interface WaveDef {
  * 固定ウェーブ定義をベースに、番号が大きくなるほど数を増やす。
  */
 export function getWaveDef(wave: number): WaveDef {
-  const hasDragon = wave % 10 === 0;
-  const orcCount = Math.floor(Math.max(0, wave - 3) * 0.4);
-  const goblinCount = Math.max(4, wave * 2 + 2);
+  const dragonCount = wave % 10 === 0 ? Math.floor(wave / 10) : 0;
+  // wave3以降オーク登場、後半ほど比率を上げる
+  const orcCount = Math.floor(Math.max(0, wave - 3) * 0.6);
+  // wave10以降は増加率を加速
+  const goblinCount = Math.max(4, Math.floor(wave * 2.5 + 2));
 
   // 通常ゴブリン。ウェーブ6以降は分裂ゴブリンを混ぜる
   const splittingCount = wave >= 6 ? Math.floor(goblinCount * 0.3) : 0;
@@ -39,8 +41,8 @@ export function getWaveDef(wave: number): WaveDef {
   if (armoredOrcCount > 0) {
     entries.push({ kind: 'armored_orc', count: armoredOrcCount, intervalMs: 2500 });
   }
-  if (hasDragon) {
-    entries.push({ kind: 'dragon', count: 1, intervalMs: 3000 });
+  if (dragonCount > 0) {
+    entries.push({ kind: 'dragon', count: dragonCount, intervalMs: 4000 });
   }
 
   return { entries };
