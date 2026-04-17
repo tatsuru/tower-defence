@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
 
     this.pauseBtn = this.add.graphics().setDepth(30);
     this.pauseLabel = this.add
-      .text(bx + bw / 2, by + bh / 2, '⏸', { fontSize: '16px', color: '#ffffff' })
+      .text(bx + bw / 2, by + bh / 2, '||', { fontSize: '16px', color: '#ffffff' })
       .setOrigin(0.5)
       .setDepth(31);
 
@@ -121,7 +121,7 @@ export class GameScene extends Phaser.Scene {
       .on('pointerdown', () => this.togglePause());
 
     this.pauseOverlay = this.add
-      .text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60, '⏸  一時停止中\nタップして再開', {
+      .text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60, '一時停止中\nタップして再開', {
         fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
         stroke: '#000000', strokeThickness: 4,
         align: 'center', lineSpacing: 8,
@@ -147,7 +147,7 @@ export class GameScene extends Phaser.Scene {
     this.pauseBtn.fillRoundedRect(bx, by, bw, bh, 6);
     this.pauseBtn.lineStyle(1, this.isPaused ? 0x88cc88 : 0x445566);
     this.pauseBtn.strokeRoundedRect(bx, by, bw, bh, 6);
-    this.pauseLabel.setText(this.isPaused ? '▶' : '⏸');
+    this.pauseLabel.setText(this.isPaused ? '>' : '||');
   }
 
   update(_time: number, delta: number): void {
