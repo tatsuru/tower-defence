@@ -30,9 +30,16 @@ export class StatusBar {
           ? `ウェーブ ${state.wave}`
           : 'GAME OVER';
 
-    this.text.setText([
-      `${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G`,
-      `スコア: ${state.score.toLocaleString()}`,
-    ]);
+    if (IS_MOBILE) {
+      this.text.setText([
+        `${phaseLabel}  ♥${state.lives}  ${state.gold}G`,
+        `Score: ${state.score.toLocaleString()}`,
+      ]);
+    } else {
+      this.text.setText([
+        `${phaseLabel}    ライフ: ${state.lives}    ゴールド: ${state.gold}G`,
+        `スコア: ${state.score.toLocaleString()}`,
+      ]);
+    }
   }
 }

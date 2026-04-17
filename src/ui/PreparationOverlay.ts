@@ -5,10 +5,14 @@ import { GameState } from '../state/GameState';
 import { getWaveDef } from '../data/waves';
 import { ALL_ENEMY_DEFS } from '../data/enemies';
 
-const AUTO_BTN_W = 120;
-const AUTO_BTN_H = 28;
-const AUTO_BTN_X = SCREEN_WIDTH - 145 - AUTO_BTN_W - 8;
-const AUTO_BTN_Y = 10;
+// ポーズボタン(GameScene側)の右端=SCREEN_WIDTH-6 から左に並べる
+const BTN_H    = 28;
+const BTN_Y    = 10;
+const PAUSE_RIGHT = 58 + 8; // ポーズボタン幅52 + gap6 + margin8
+const SKIP_BTN_W  = 116;
+const SKIP_BTN_X  = SCREEN_WIDTH - PAUSE_RIGHT - SKIP_BTN_W;
+const AUTO_BTN_W  = 110;
+const AUTO_BTN_X  = SKIP_BTN_X - 8 - AUTO_BTN_W;
 
 export class PreparationOverlay {
   private countdownText: Phaser.GameObjects.Text;
@@ -27,17 +31,15 @@ export class PreparationOverlay {
       .setOrigin(0.5)
       .setDepth(10);
 
-    // 「今すぐ開始」ボタン（右端）
-    const bx = SCREEN_WIDTH - 145;
-    const by = 10;
+    // 「今すぐ開始」ボタン（ポーズボタンの左隣）
     this.skipBtn = scene.add.graphics().setDepth(10);
     this.skipLabel = scene.add
-      .text(bx + 65, by + 14, '今すぐ開始', { fontSize: '13px', color: '#ffffff' })
+      .text(SKIP_BTN_X + SKIP_BTN_W / 2, BTN_Y + BTN_H / 2, '今すぐ開始', { fontSize: '13px', color: '#ffffff' })
       .setOrigin(0.5)
       .setDepth(10);
 
     scene.add
-      .zone(bx, by, 130, 28)
+      .zone(SKIP_BTN_X, BTN_Y, SKIP_BTN_W, BTN_H)
       .setOrigin(0, 0)
       .setInteractive()
       .setDepth(10)
@@ -46,7 +48,7 @@ export class PreparationOverlay {
     // 「自動進行」トグルボタン（常時表示）
     this.autoBtn = scene.add.graphics().setDepth(10);
     this.autoLabel = scene.add
-      .text(AUTO_BTN_X + AUTO_BTN_W / 2, AUTO_BTN_Y + AUTO_BTN_H / 2, '', {
+      .text(AUTO_BTN_X + AUTO_BTN_W / 2, BTN_Y + BTN_H / 2, '', {
         fontSize: '12px',
         color: '#ffffff',
       })
@@ -54,13 +56,12 @@ export class PreparationOverlay {
       .setDepth(10);
 
     scene.add
-      .zone(AUTO_BTN_X, AUTO_BTN_Y, AUTO_BTN_W, AUTO_BTN_H)
+      .zone(AUTO_BTN_X, BTN_Y, AUTO_BTN_W, BTN_H)
       .setOrigin(0, 0)
       .setInteractive()
       .setDepth(10)
       .on('pointerdown', () => {
         waveManager.autoAdvance = !waveManager.autoAdvance;
-        // ON にした直後の準備フェーズを即時短縮
         if (waveManager.autoAdvance && state.phase === 'preparation') {
           waveManager.skipPreparation();
         }
@@ -86,9 +87,9 @@ export class PreparationOverlay {
   private renderAutoBtn(on: boolean): void {
     this.autoBtn.clear();
     this.autoBtn.fillStyle(on ? 0x1a3a1a : 0x1a1a1a);
-    this.autoBtn.fillRoundedRect(AUTO_BTN_X, AUTO_BTN_Y, AUTO_BTN_W, AUTO_BTN_H, 4);
+    this.autoBtn.fillRoundedRect(AUTO_BTN_X, BTN_Y, AUTO_BTN_W, BTN_H, 4);
     this.autoBtn.lineStyle(1, on ? 0x44cc44 : 0x445566);
-    this.autoBtn.strokeRoundedRect(AUTO_BTN_X, AUTO_BTN_Y, AUTO_BTN_W, AUTO_BTN_H, 4);
+    this.autoBtn.strokeRoundedRect(AUTO_BTN_X, BTN_Y, AUTO_BTN_W, BTN_H, 4);
     this.autoLabel.setText(`自動進行: ${on ? 'ON' : 'OFF'}`).setColor(on ? '#88ff88' : '#888888');
   }
 
@@ -117,9 +118,9 @@ export class PreparationOverlay {
     if (!waveManager.autoAdvance) {
       this.skipBtn.clear();
       this.skipBtn.fillStyle(0x223344);
-      this.skipBtn.fillRoundedRect(SCREEN_WIDTH - 145, 10, 130, 28, 4);
+      this.skipBtn.fillRoundedRect(SKIP_BTN_X, BTN_Y, SKIP_BTN_W, BTN_H, 4);
       this.skipBtn.lineStyle(1, 0x445566);
-      this.skipBtn.strokeRoundedRect(SCREEN_WIDTH - 145, 10, 130, 28, 4);
+      this.skipBtn.strokeRoundedRect(SKIP_BTN_X, BTN_Y, SKIP_BTN_W, BTN_H, 4);
     }
   }
 }
