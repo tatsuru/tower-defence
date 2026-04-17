@@ -16,9 +16,14 @@
       #game {
         width: 100%;
         max-width: 840px;
-        touch-action: none; /* ブラウザのスワイプ・ズームを無効化 */
+        touch-action: none;
       }
-      #game canvas { display: block; width: 100% !important; height: auto !important; }
+      #game canvas { display: block; }
+
+      /* モバイルではchangelogを非表示 */
+      @media (max-width: 840px) {
+        #changelog { display: none; }
+      }
       #changelog {
         width: 100%;
         max-width: 840px;
