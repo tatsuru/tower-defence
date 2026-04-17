@@ -9,6 +9,10 @@ const config: Phaser.Types.Core.GameConfig = {
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
   parent: 'game',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+  },
   scene: [TitleScene, GameScene],
 };
 

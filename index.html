@@ -11,8 +11,14 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        overflow-x: hidden;
       }
-      #game canvas { display: block; }
+      #game {
+        width: 100%;
+        max-width: 840px;
+        touch-action: none; /* ブラウザのスワイプ・ズームを無効化 */
+      }
+      #game canvas { display: block; width: 100% !important; height: auto !important; }
       #changelog {
         width: 100%;
         max-width: 840px;
