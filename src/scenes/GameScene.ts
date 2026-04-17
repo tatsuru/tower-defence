@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CELL_SIZE, GRID_COLS, GRID_OFFSET_X, GRID_OFFSET_Y, GRID_ROWS } from '../constants';
+import { CELL_SIZE, GRID_COLS, GRID_OFFSET_X, GRID_OFFSET_Y, GRID_ROWS, SCREEN_WIDTH, SCREEN_HEIGHT } from '../constants';
 import { CellType } from '../types';
 import { MapGenerator } from '../map/MapGenerator';
 import { Tower } from '../entities/Tower';
@@ -42,6 +42,11 @@ export class GameScene extends Phaser.Scene {
   private towerPanel!: TowerPanel;
   private detailPanel!: TowerDetailPanel;
   private prepOverlay!: PreparationOverlay;
+
+  private isPaused: boolean = false;
+  private pauseBtn!: Phaser.GameObjects.Graphics;
+  private pauseLabel!: Phaser.GameObjects.Text;
+  private pauseOverlay!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -95,10 +100,59 @@ export class GameScene extends Phaser.Scene {
 
     this.input.on('pointermove', (ptr: Phaser.Input.Pointer) => this.onHover(ptr));
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => this.onGridClick(ptr));
+
+    this.createPauseButton();
+  }
+
+  private createPauseButton(): void {
+    const bw = 52, bh = 32, bx = SCREEN_WIDTH - bw - 6, by = 8;
+
+    this.pauseBtn = this.add.graphics().setDepth(30);
+    this.pauseLabel = this.add
+      .text(bx + bw / 2, by + bh / 2, '⏸', { fontSize: '16px', color: '#ffffff' })
+      .setOrigin(0.5)
+      .setDepth(31);
+
+    this.add
+      .zone(bx, by, bw, bh)
+      .setOrigin(0, 0)
+      .setInteractive()
+      .setDepth(32)
+      .on('pointerdown', () => this.togglePause());
+
+    this.pauseOverlay = this.add
+      .text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60, '⏸  一時停止中\nタップして再開', {
+        fontSize: '28px', color: '#ffffff', fontStyle: 'bold',
+        stroke: '#000000', strokeThickness: 4,
+        align: 'center', lineSpacing: 8,
+      })
+      .setOrigin(0.5)
+      .setDepth(50)
+      .setVisible(false);
+
+    this.renderPauseBtn();
+  }
+
+  private togglePause(): void {
+    if (this.state.phase === 'gameover') return;
+    this.isPaused = !this.isPaused;
+    this.pauseOverlay.setVisible(this.isPaused);
+    this.renderPauseBtn();
+  }
+
+  private renderPauseBtn(): void {
+    const bw = 52, bh = 32, bx = SCREEN_WIDTH - bw - 6, by = 8;
+    this.pauseBtn.clear();
+    this.pauseBtn.fillStyle(this.isPaused ? 0x334433 : 0x223344, 0.85);
+    this.pauseBtn.fillRoundedRect(bx, by, bw, bh, 6);
+    this.pauseBtn.lineStyle(1, this.isPaused ? 0x88cc88 : 0x445566);
+    this.pauseBtn.strokeRoundedRect(bx, by, bw, bh, 6);
+    this.pauseLabel.setText(this.isPaused ? '▶' : '⏸');
   }
 
   update(_time: number, delta: number): void {
     if (this.state.phase === 'gameover') return;
+    if (this.isPaused) return;
 
     this.waveManager.update(delta);
     this.particleEffect.update(delta);
@@ -317,6 +371,7 @@ export class GameScene extends Phaser.Scene {
     for (const t of this.towers) t.destroy();
     this.towers = [];
     this.waveManager.destroyAll();
+    this.isPaused = false;
     this.scene.start('TitleScene');
   }
 }

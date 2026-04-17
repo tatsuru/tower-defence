@@ -10,7 +10,7 @@ export const GRID_OFFSET_Y = 52;
 export const STATUS_BAR_HEIGHT = 48;
 
 // 下部UIパネル高さ（タワーパネル2段対応）
-export const BOTTOM_PANEL_HEIGHT = 188;
+export const BOTTOM_PANEL_HEIGHT = 208;
 
 // 画面サイズ
 export const SCREEN_WIDTH = GRID_COLS * CELL_SIZE + GRID_OFFSET_X * 2;

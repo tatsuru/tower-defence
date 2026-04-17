@@ -12,7 +12,7 @@ import { GameState } from '../state/GameState';
 
 const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
 const BUTTON_W = 144;
-const BUTTON_H = 52;
+const BUTTON_H = 64;
 const BUTTON_GAP = 8;
 // 2段の間隔・説明エリア開始
 const ROW2_Y = PANEL_Y + 4 + BUTTON_H + 6;
