@@ -5,18 +5,19 @@ import {
   GRID_ROWS,
   CELL_SIZE,
   SCREEN_WIDTH,
+  IS_MOBILE,
 } from '../constants';
 import { TOWER_DEFS, BASIC_TOWER_KINDS, ADVANCED_TOWER_KINDS, TowerKind, scaledCost } from '../data/towers';
 import { getSynergyHints } from '../data/synergies';
 import { GameState } from '../state/GameState';
 
 const PANEL_Y = GRID_OFFSET_Y + GRID_ROWS * CELL_SIZE + 4;
-const BUTTON_W = 144;
-const BUTTON_H = 64;
-const BUTTON_GAP = 8;
+const BUTTON_W   = IS_MOBILE ? 96  : 144;
+const BUTTON_H   = IS_MOBILE ? 88  : 64;
+const BUTTON_GAP = IS_MOBILE ? 6   : 8;
 // 2段の間隔・説明エリア開始
-const ROW2_Y = PANEL_Y + 4 + BUTTON_H + 6;
-const INFO_Y = ROW2_Y + BUTTON_H + 10;
+const ROW2_Y = PANEL_Y + 4 + BUTTON_H + 8;
+const INFO_Y = ROW2_Y + BUTTON_H + 12;
 
 type ButtonEntry = {
   kind: TowerKind;
@@ -90,16 +91,18 @@ export class TowerPanel {
 
     const btn = scene.add.graphics();
 
+    const fs = IS_MOBILE ? { name: '15px', cost: '13px', lock: '12px' }
+                         : { name: '13px', cost: '12px', lock: '11px' };
     const nameText = scene.add
-      .text(bx + BUTTON_W / 2, by + 8, def.name, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold' })
+      .text(bx + BUTTON_W / 2, by + 8, def.name, { fontSize: fs.name, color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5, 0);
 
     const costText = scene.add
-      .text(bx + BUTTON_W / 2, by + 26, '', { fontSize: '12px', color: '#ffd700' })
+      .text(bx + BUTTON_W / 2, by + (IS_MOBILE ? 32 : 26), '', { fontSize: fs.cost, color: '#ffd700' })
       .setOrigin(0.5, 0);
 
     const lockText = scene.add
-      .text(bx + BUTTON_W / 2, by + BUTTON_H / 2 + 4, '', { fontSize: '11px', color: '#888888' })
+      .text(bx + BUTTON_W / 2, by + BUTTON_H / 2 + 4, '', { fontSize: fs.lock, color: '#888888' })
       .setOrigin(0.5);
 
     scene.add

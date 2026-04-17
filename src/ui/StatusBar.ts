@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SCREEN_WIDTH, STATUS_BAR_HEIGHT } from '../constants';
+import { SCREEN_WIDTH, STATUS_BAR_HEIGHT, IS_MOBILE, GRID_OFFSET_X } from '../constants';
 import { GameState } from '../state/GameState';
 
 export class StatusBar {
@@ -11,11 +11,11 @@ export class StatusBar {
     this.bg.fillStyle(0x0d0d1e);
     this.bg.fillRect(0, 0, SCREEN_WIDTH, STATUS_BAR_HEIGHT);
 
-    this.text = scene.add.text(12, 6, '', {
-      fontSize: '16px',
+    this.text = scene.add.text(GRID_OFFSET_X, IS_MOBILE ? 4 : 6, '', {
+      fontSize: IS_MOBILE ? '13px' : '16px',
       color: '#ffffff',
       fontStyle: 'bold',
-      lineSpacing: 4,
+      lineSpacing: 2,
     });
 
     this.update(state);
