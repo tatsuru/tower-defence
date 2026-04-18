@@ -75,8 +75,8 @@ export class GameScene extends Phaser.Scene {
       this.mapData.path,
       () => { this.onWaveComplete(); },
       {
-        onWaveStart: (wave) => {
-          this.waveBanner.show(wave);
+        onWaveStart: (wave, event) => {
+          this.waveBanner.show(wave, event);
           soundManager.playWaveStart();
         },
         onEnemyDeath: (x, y, color, isBoss) => {

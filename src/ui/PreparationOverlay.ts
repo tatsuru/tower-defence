@@ -113,7 +113,10 @@ export class PreparationOverlay {
       const name = ALL_ENEMY_DEFS[e.kind]?.name ?? e.kind;
       return `${name}×${e.count}`;
     });
-    this.wavePreviewText.setText(`出現: ${parts.join('  ')}`);
+    const eventLabel = def.event === 'boss_rush' ? ' [ボスラッシュ！]'
+                     : def.event === 'rush'      ? ' [ラッシュ！]' : '';
+    this.wavePreviewText.setText(`出現: ${parts.join('  ')}${eventLabel}`)
+      .setColor(def.event === 'boss_rush' ? '#ff8888' : def.event === 'rush' ? '#ffaa44' : '#cccccc');
 
     if (!waveManager.autoAdvance) {
       this.skipBtn.clear();

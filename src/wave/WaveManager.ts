@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
 import { ALL_ENEMY_DEFS } from '../data/enemies';
-import { getWaveDef, PREPARATION_SECONDS } from '../data/waves';
+import { getWaveDef, PREPARATION_SECONDS, WaveEvent } from '../data/waves';
 import { Enemy } from '../entities/Enemy';
 import { GameState } from '../state/GameState';
 
 type SpawnTask = { kind: string; remainingMs: number };
 
 export interface WaveManagerCallbacks {
-  onWaveStart: (wave: number) => void;
+  onWaveStart: (wave: number, event: WaveEvent) => void;
   onEnemyDeath: (x: number, y: number, color: number, isBoss: boolean) => void;
   onLifeLost: () => void;
 }
@@ -71,8 +71,8 @@ export class WaveManager {
 
   private startNextWave(): void {
     this.state.startWave();
-    this.callbacks.onWaveStart(this.state.wave);
     const waveDef = getWaveDef(this.state.wave);
+    this.callbacks.onWaveStart(this.state.wave, waveDef.event);
     this.spawnQueue = [];
 
     let totalDelay = 0;
