@@ -34,6 +34,7 @@ export class TowerPanel {
 
   selectedKind: TowerKind | null = null;
   private hoveredKind: TowerKind | null = null;
+  private tappedKind: TowerKind | null = null; // モバイルで最後にタップしたボタンの説明表示用
   private state: GameState;
   private getTowerCount: (kind: TowerKind) => number;
 
@@ -112,13 +113,16 @@ export class TowerPanel {
       .on('pointerover', () => { this.hoveredKind = kind; this.updateInfo(); })
       .on('pointerout',  () => { this.hoveredKind = null;  this.updateInfo(); })
       .on('pointerdown', () => {
+        // ロック・購入可否に関わらず説明は常に表示
+        this.tappedKind = kind;
         const isUnlocked = this.state.wave >= def.unlockedWave;
-        if (!isUnlocked) return;
-        if (this.selectedKind === kind) {
-          this.selectedKind = null;
-        } else {
-          const cost = scaledCost(def.cost, this.getTowerCount(kind));
-          if (this.state.gold >= cost) this.selectedKind = kind;
+        if (isUnlocked) {
+          if (this.selectedKind === kind) {
+            this.selectedKind = null;
+          } else {
+            const cost = scaledCost(def.cost, this.getTowerCount(kind));
+            if (this.state.gold >= cost) this.selectedKind = kind;
+          }
         }
         this.render();
         this.updateInfo();
@@ -128,7 +132,7 @@ export class TowerPanel {
   }
 
   private updateInfo(): void {
-    const kind = this.hoveredKind ?? this.selectedKind;
+    const kind = this.hoveredKind ?? this.selectedKind ?? this.tappedKind;
     if (!kind) { this.infoText.setText(''); return; }
 
     const def = TOWER_DEFS[kind];
