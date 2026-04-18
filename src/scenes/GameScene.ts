@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CELL_SIZE, GRID_COLS, GRID_OFFSET_X, GRID_OFFSET_Y, GRID_ROWS, SCREEN_WIDTH, SCREEN_HEIGHT } from '../constants';
+import { CELL_SIZE, GRID_COLS, GRID_OFFSET_X, GRID_OFFSET_Y, GRID_ROWS, SCREEN_WIDTH, SCREEN_HEIGHT, IS_MOBILE } from '../constants';
 import { CellType } from '../types';
 import { MapGenerator } from '../map/MapGenerator';
 import { Tower } from '../entities/Tower';
@@ -42,6 +42,9 @@ export class GameScene extends Phaser.Scene {
   private towerPanel!: TowerPanel;
   private detailPanel!: TowerDetailPanel;
   private prepOverlay!: PreparationOverlay;
+
+  // モバイル用: 1回目タップでプレビュー、2回目タップで配置
+  private pendingCell: { col: number; row: number; kind: TowerKind } | null = null;
 
   private isPaused: boolean = false;
   private pauseBtn!: Phaser.GameObjects.Graphics;
@@ -182,7 +185,10 @@ export class GameScene extends Phaser.Scene {
     this.enemyTooltip.hide();
 
     const cell = this.pixelToCell(ptr.x, ptr.y);
-    if (!cell) return;
+    if (!cell) {
+      this.drawPendingCellPreview();
+      return;
+    }
 
     const { col, row } = cell;
     const gridCell = this.mapData.grid[row][col];
@@ -201,13 +207,28 @@ export class GameScene extends Phaser.Scene {
 
     // タワー選択中は配置予定位置の攻撃範囲を表示
     if (kind) {
-      const def = TOWER_DEFS[kind];
-      const rangePixels = def.levels[0].range * CELL_SIZE;
-      const cx = x + CELL_SIZE / 2;
-      const cy = y + CELL_SIZE / 2;
-      this.hoverGraphics.lineStyle(1, def.levels[0].color, 0.7);
-      this.hoverGraphics.strokeCircle(cx, cy, rangePixels);
+      this.drawRangeCircle(kind, x, y);
     }
+  }
+
+  // モバイル用ペンディングセルのプレビューを描画（pointermoveがなくても表示）
+  private drawPendingCellPreview(): void {
+    if (!this.pendingCell) return;
+    const { col, row, kind } = this.pendingCell;
+    const x = GRID_OFFSET_X + col * CELL_SIZE;
+    const y = GRID_OFFSET_Y + row * CELL_SIZE;
+    this.hoverGraphics.fillStyle(0x88ff88, 0.3);
+    this.hoverGraphics.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+    this.drawRangeCircle(kind, x, y);
+  }
+
+  private drawRangeCircle(kind: TowerKind, cellX: number, cellY: number): void {
+    const def = TOWER_DEFS[kind];
+    const rangePixels = def.levels[0].range * CELL_SIZE;
+    const cx = cellX + CELL_SIZE / 2;
+    const cy = cellY + CELL_SIZE / 2;
+    this.hoverGraphics.lineStyle(1, def.levels[0].color, 0.7);
+    this.hoverGraphics.strokeCircle(cx, cy, rangePixels);
   }
 
   private onGridClick(ptr: Phaser.Input.Pointer): void {
@@ -223,6 +244,8 @@ export class GameScene extends Phaser.Scene {
     // 既存タワーをクリック → 詳細パネル
     const existingTower = this.towers.find((t) => t.col === col && t.row === row);
     if (existingTower) {
+      this.pendingCell = null;
+      this.hoverGraphics.clear();
       this.towerPanel.deselect();
       if (this.detailPanel.currentTower === existingTower) {
         this.detailPanel.hide();
@@ -235,9 +258,26 @@ export class GameScene extends Phaser.Scene {
     this.detailPanel.hide();
 
     const kind = this.towerPanel.selectedKind;
-    if (!kind) return;
+    if (!kind) {
+      this.pendingCell = null;
+      this.hoverGraphics.clear();
+      return;
+    }
 
-    this.placeTower(kind, col, row);
+    if (IS_MOBILE) {
+      // 同じセル・同じ種類なら配置、それ以外はプレビュー表示
+      if (this.pendingCell?.col === col && this.pendingCell?.row === row && this.pendingCell?.kind === kind) {
+        this.pendingCell = null;
+        this.hoverGraphics.clear();
+        this.placeTower(kind, col, row);
+      } else {
+        this.pendingCell = { col, row, kind };
+        this.hoverGraphics.clear();
+        this.drawPendingCellPreview();
+      }
+    } else {
+      this.placeTower(kind, col, row);
+    }
   }
 
   private sellTower(tower: Tower): void {
