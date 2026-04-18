@@ -414,7 +414,7 @@ export class GameScene extends Phaser.Scene {
     g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
     // セル間の薄い境界線
-    g.lineStyle(1, 0x1e4020, 0.4);
+    g.lineStyle(1, 0x152e17, 0.8);
     g.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
 
     // 明暗の斑点で草むらの質感
