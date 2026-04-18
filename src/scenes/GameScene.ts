@@ -274,10 +274,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onWaveComplete(): void {
-    const wave = this.state.wave;
+    const nextWave = this.state.wave + 1;
     for (const kind of ADVANCED_TOWER_KINDS) {
       const def = TOWER_DEFS[kind];
-      if (def.unlockedWave === wave) {
+      if (def.unlockedWave === nextWave) {
         this.showUnlockBanner(def.name);
       }
     }
