@@ -8,7 +8,7 @@ import { ALL_ENEMY_DEFS } from '../data/enemies';
 // ポーズボタン(GameScene側)の右端=SCREEN_WIDTH-6 から左に並べる
 const BTN_H    = 28;
 const BTN_Y    = 10;
-const PAUSE_RIGHT = 58 + 8; // ポーズボタン幅52 + gap6 + margin8
+const PAUSE_RIGHT = 44 + 6 + 52 + 6 + 8; // ポーズ(44)+gap(6)+速度(52)+右余白(6)+margin(8)
 const SKIP_BTN_W  = 116;
 const SKIP_BTN_X  = SCREEN_WIDTH - PAUSE_RIGHT - SKIP_BTN_W;
 const AUTO_BTN_W  = 110;
