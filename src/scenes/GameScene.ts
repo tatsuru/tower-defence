@@ -46,9 +46,12 @@ export class GameScene extends Phaser.Scene {
   private pendingCell: { col: number; row: number; kind: TowerKind } | null = null;
 
   private isPaused: boolean = false;
+  private speedMultiplier: 1 | 2 | 4 = 1;
   private pauseBtn!: Phaser.GameObjects.Graphics;
   private pauseLabel!: Phaser.GameObjects.Text;
   private pauseOverlay!: Phaser.GameObjects.Text;
+  private speedBtn!: Phaser.GameObjects.Graphics;
+  private speedLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -107,16 +110,31 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPauseButton(): void {
-    const bw = 52, bh = 32, bx = SCREEN_WIDTH - bw - 6, by = 8;
+    const bh = 32, by = 8;
+    const pauseW = 44, pauseX = SCREEN_WIDTH - pauseW - 6;
+    const speedW = 52, speedX = pauseX - 6 - speedW;
 
-    this.pauseBtn = this.add.graphics().setDepth(30);
-    this.pauseLabel = this.add
-      .text(bx + bw / 2, by + bh / 2, '||', { fontSize: '16px', color: '#ffffff' })
+    // 速度ボタン
+    this.speedBtn = this.add.graphics().setDepth(30);
+    this.speedLabel = this.add
+      .text(speedX + speedW / 2, by + bh / 2, '1x', { fontSize: '14px', color: '#ffffff' })
       .setOrigin(0.5)
       .setDepth(31);
-
     this.add
-      .zone(bx, by, bw, bh)
+      .zone(speedX, by, speedW, bh)
+      .setOrigin(0, 0)
+      .setInteractive()
+      .setDepth(32)
+      .on('pointerdown', () => this.cycleSpeed());
+
+    // 一時停止ボタン
+    this.pauseBtn = this.add.graphics().setDepth(30);
+    this.pauseLabel = this.add
+      .text(pauseX + pauseW / 2, by + bh / 2, '||', { fontSize: '16px', color: '#ffffff' })
+      .setOrigin(0.5)
+      .setDepth(31);
+    this.add
+      .zone(pauseX, by, pauseW, bh)
       .setOrigin(0, 0)
       .setInteractive()
       .setDepth(32)
@@ -133,6 +151,27 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.renderPauseBtn();
+    this.renderSpeedBtn();
+  }
+
+  private cycleSpeed(): void {
+    if (this.state.phase === 'gameover') return;
+    this.speedMultiplier = this.speedMultiplier === 1 ? 2 : this.speedMultiplier === 2 ? 4 : 1;
+    this.tweens.timeScale = this.speedMultiplier;
+    this.renderSpeedBtn();
+  }
+
+  private renderSpeedBtn(): void {
+    const bh = 32, by = 8;
+    const pauseW = 44, pauseX = SCREEN_WIDTH - pauseW - 6;
+    const speedW = 52, speedX = pauseX - 6 - speedW;
+    const active = this.speedMultiplier > 1;
+    this.speedBtn.clear();
+    this.speedBtn.fillStyle(active ? 0x1a2a1a : 0x1a1a2a, 0.85);
+    this.speedBtn.fillRoundedRect(speedX, by, speedW, bh, 6);
+    this.speedBtn.lineStyle(1, active ? 0x44cc44 : 0x445566);
+    this.speedBtn.strokeRoundedRect(speedX, by, speedW, bh, 6);
+    this.speedLabel.setText(`${this.speedMultiplier}x`).setColor(active ? '#88ff88' : '#ffffff');
   }
 
   private togglePause(): void {
@@ -143,12 +182,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderPauseBtn(): void {
-    const bw = 52, bh = 32, bx = SCREEN_WIDTH - bw - 6, by = 8;
+    const bh = 32, by = 8;
+    const pauseW = 44, pauseX = SCREEN_WIDTH - pauseW - 6;
     this.pauseBtn.clear();
     this.pauseBtn.fillStyle(this.isPaused ? 0x334433 : 0x223344, 0.85);
-    this.pauseBtn.fillRoundedRect(bx, by, bw, bh, 6);
+    this.pauseBtn.fillRoundedRect(pauseX, by, pauseW, bh, 6);
     this.pauseBtn.lineStyle(1, this.isPaused ? 0x88cc88 : 0x445566);
-    this.pauseBtn.strokeRoundedRect(bx, by, bw, bh, 6);
+    this.pauseBtn.strokeRoundedRect(pauseX, by, pauseW, bh, 6);
     this.pauseLabel.setText(this.isPaused ? '>' : '||');
   }
 
@@ -156,11 +196,12 @@ export class GameScene extends Phaser.Scene {
     if (this.state.phase === 'gameover') return;
     if (this.isPaused) return;
 
-    this.waveManager.update(delta);
-    this.particleEffect.update(delta);
+    const scaledDelta = delta * this.speedMultiplier;
+    this.waveManager.update(scaledDelta);
+    this.particleEffect.update(scaledDelta);
 
     for (const tower of this.towers) {
-      tower.update(delta, this.waveManager.enemies);
+      tower.update(scaledDelta, this.waveManager.enemies);
     }
 
     this.prepOverlay.update(this.state, this.waveManager);
@@ -518,6 +559,8 @@ export class GameScene extends Phaser.Scene {
     this.towers = [];
     this.waveManager.destroyAll();
     this.isPaused = false;
+    this.speedMultiplier = 1;
+    this.tweens.timeScale = 1;
     this.scene.start('TitleScene');
   }
 }
