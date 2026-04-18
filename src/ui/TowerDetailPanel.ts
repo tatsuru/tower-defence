@@ -147,10 +147,8 @@ export class TowerDetailPanel {
       : '';
 
     const dmgLabel = isDotPercent ? 'DoT(最大HP%)' : 'ダメージ';
-    const killNote = def.attackType === 'dot' ? '' : ` / キル: ${tower.killCount}`;
-    const dmgStat = def.attackType === 'dot'
-      ? '(経時ダメージ・計上外)'
-      : `${tower.totalDamageDealt}${killNote}`;
+    const killNote = ` / キル: ${tower.killCount}`;
+    const dmgStat = `${tower.totalDamageDealt}${killNote}`;
 
     this.text.setText(
       `${def.name} [${levelNames[tower.level]}]\n` +

@@ -209,7 +209,11 @@ export class Tower {
         break;
       }
       case 'dot':
-        target.applyPercentDot(ld.damage * (this.synergyBonus.damageMultiplier ?? 1));
+        target.applyPercentDot(ld.damage * (this.synergyBonus.damageMultiplier ?? 1), (dealt, killed) => {
+          this.totalDamageDealt += dealt;
+          this.state.addScore(dealt);
+          if (killed) { this.killCount++; this.state.addScore(100); }
+        });
         break;
       case 'chain': {
         // 1撃目

@@ -11,6 +11,7 @@ interface DoTState {
   damagePerTick: number;
   ticksRemaining: number;
   msUntilNextTick: number;
+  onDamage?: (dealt: number, killed: boolean) => void;
 }
 
 export class Enemy {
@@ -115,7 +116,8 @@ export class Enemy {
     if (!this.dotState) return;
     this.dotState.msUntilNextTick -= deltaMs;
     if (this.dotState.msUntilNextTick <= 0) {
-      this.takeDamage(this.dotState.damagePerTick);
+      const dealt = this.takeDamage(this.dotState.damagePerTick);
+      this.dotState.onDamage?.(dealt, this.isDead);
       this.dotState.ticksRemaining--;
       if (this.dotState.ticksRemaining <= 0) {
         this.dotState = null;
@@ -141,11 +143,7 @@ export class Enemy {
   applyDot(damagePerTick: number): void {
     const totalTicks = Math.floor(DOT_DURATION_MS / DOT_TICK_MS);
     if (!this.dotState) {
-      this.dotState = {
-        damagePerTick,
-        ticksRemaining: totalTicks,
-        msUntilNextTick: DOT_TICK_MS,
-      };
+      this.dotState = { damagePerTick, ticksRemaining: totalTicks, msUntilNextTick: DOT_TICK_MS };
     } else {
       // 重ねがけ：残りティックをリセットして強い方のダメージを採用
       this.dotState.damagePerTick = Math.max(this.dotState.damagePerTick, damagePerTick);
@@ -153,10 +151,17 @@ export class Enemy {
     }
   }
 
-  applyPercentDot(percentPerTick: number): void {
-    // 最大HPの%をフラットダメージに変換してDoTとして適用
+  applyPercentDot(percentPerTick: number, onDamage?: (dealt: number, killed: boolean) => void): void {
     const damagePerTick = Math.max(1, Math.round(this.maxHp * percentPerTick / 100));
-    this.applyDot(damagePerTick);
+    const totalTicks = Math.floor(DOT_DURATION_MS / DOT_TICK_MS);
+    if (!this.dotState) {
+      this.dotState = { damagePerTick, ticksRemaining: totalTicks, msUntilNextTick: DOT_TICK_MS, onDamage };
+    } else {
+      // 重ねがけ：ダメージと残りティックをリセット、コールバックも更新
+      this.dotState.damagePerTick = Math.max(this.dotState.damagePerTick, damagePerTick);
+      this.dotState.ticksRemaining = totalTicks;
+      this.dotState.onDamage = onDamage;
+    }
   }
 
   isSlowed(): boolean {
