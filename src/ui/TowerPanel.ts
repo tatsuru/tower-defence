@@ -95,7 +95,7 @@ export class TowerPanel {
     const fs = IS_MOBILE ? { name: '15px', cost: '13px', lock: '12px' }
                          : { name: '13px', cost: '12px', lock: '11px' };
     const nameText = scene.add
-      .text(bx + BUTTON_W / 2, by + 8, def.name, { fontSize: fs.name, color: '#ffffff', fontStyle: 'bold' })
+      .text(bx + BUTTON_W / 2, by + (IS_MOBILE ? 8 : 12), def.name, { fontSize: fs.name, color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5, 0);
 
     const costText = scene.add
