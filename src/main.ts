@@ -7,6 +7,7 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: SCREEN_WIDTH,
   height: SCREEN_HEIGHT,
+  resolution: window.devicePixelRatio ?? 1,
   backgroundColor: '#1a1a2e',
   parent: 'game',
   scale: IS_MOBILE
