@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { TitleScene } from './scenes/TitleScene';
 import { GameScene } from './scenes/GameScene';
-import { SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import { SCREEN_WIDTH, SCREEN_HEIGHT, IS_MOBILE } from './constants';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -9,12 +9,18 @@ const config: Phaser.Types.Core.GameConfig = {
   height: SCREEN_HEIGHT,
   backgroundColor: '#1a1a2e',
   parent: 'game',
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
+  scale: IS_MOBILE
+    ? {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT,
+      }
+    : {
+        mode: Phaser.Scale.NONE,
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT,
+      },
   scene: [TitleScene, GameScene],
 };
 
