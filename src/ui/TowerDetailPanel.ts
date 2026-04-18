@@ -39,7 +39,7 @@ export class TowerDetailPanel {
     this.upgBtnY = upgBtnY;
     this.sellBtnY = sellBtnY;
 
-    this.bg = scene.add.graphics();
+    this.bg = scene.add.graphics().setDepth(8);
     this.bg.fillStyle(0x0d0d1e, 0.9);
     this.bg.fillRoundedRect(px, py, pw, ph, 6);
     this.bg.lineStyle(1, 0x445566);
@@ -52,34 +52,39 @@ export class TowerDetailPanel {
     this.bg.strokePath();
     this.bg.setVisible(false);
 
-    this.btnGraphics = scene.add.graphics().setVisible(false);
+    this.btnGraphics = scene.add.graphics().setDepth(9).setVisible(false);
 
     this.text = scene.add
       .text(px + 10, py + 8, '', { fontSize: '12px', color: '#ffffff', lineSpacing: 4 })
+      .setDepth(9)
       .setVisible(false);
 
     // 強化ボタン
     this.upgradeLabel = scene.add
       .text(px + pw / 2, upgBtnY + btnH / 2, '', { fontSize: '13px', color: '#ffd700', fontStyle: 'bold' })
       .setOrigin(0.5)
+      .setDepth(9)
       .setVisible(false);
 
     scene.add
       .zone(px + 10, upgBtnY, pw - 20, btnH)
       .setOrigin(0, 0)
       .setInteractive()
+      .setDepth(9)
       .on('pointerdown', () => this.onUpgradeClick());
 
     // 売却ボタン
     this.sellLabel = scene.add
       .text(px + pw / 2, sellBtnY + btnH / 2, '', { fontSize: '12px', color: '#ffaaaa' })
       .setOrigin(0.5)
+      .setDepth(9)
       .setVisible(false);
 
     scene.add
       .zone(px + 10, sellBtnY, pw - 20, btnH)
       .setOrigin(0, 0)
       .setInteractive()
+      .setDepth(9)
       .on('pointerdown', () => this.onSellClick());
 
     state.subscribe(() => {
