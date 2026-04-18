@@ -23,9 +23,9 @@ export const SYNERGY_DEFS: SynergyDef[] = [
   // 射撃統制: 狙撃+弓兵 → 射程+0.5、攻速×1.15
   { kinds: ['sniper', 'archer'], label: '射撃統制', bonus: { rangeBonus: 0.5, attackSpeedMultiplier: 1.15 }, target: 'both' },
   { kinds: ['archer', 'sniper'], label: '射撃統制', bonus: { rangeBonus: 0.5, attackSpeedMultiplier: 1.15 }, target: 'both' },
-  // 貫通砲: バリスタ+砲台 → 両方ダメージ×1.35
-  { kinds: ['ballista', 'cannon'], label: '貫通砲', bonus: { damageMultiplier: 1.35 }, target: 'both' },
-  { kinds: ['cannon', 'ballista'], label: '貫通砲', bonus: { damageMultiplier: 1.35 }, target: 'both' },
+  // バリスタ+砲台 → 両方ダメージ×1.35
+  { kinds: ['ballista', 'cannon'], label: 'バリスタ', bonus: { damageMultiplier: 1.35 }, target: 'both' },
+  { kinds: ['cannon', 'ballista'], label: 'バリスタ', bonus: { damageMultiplier: 1.35 }, target: 'both' },
 
   {
     kinds: ['ice', 'fire'],
