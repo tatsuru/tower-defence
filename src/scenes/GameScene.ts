@@ -18,13 +18,12 @@ import { WaveBanner } from '../ui/WaveBanner';
 import { soundManager } from '../audio/SoundManager';
 import { EnemyTooltip } from '../ui/EnemyTooltip';
 
-const CELL_COLORS: Record<CellType, number> = {
-  [CellType.Empty]:    0x2d5a27,
-  [CellType.Path]:     0x8b6914,
-  [CellType.Blocked]:  0x3a3a3a,
-  [CellType.Entrance]: 0x1a7abf,
-  [CellType.Exit]:     0xbf1a1a,
-};
+// セル位置+インデックスで決定論的な疑似乱数（マップ再生成ごとに固定される）
+function cellRand(col: number, row: number, idx: number): number {
+  const n = (col * 73856093) ^ (row * 19349663) ^ (idx * 83492791);
+  const h = n ^ (n >>> 16);
+  return (h & 0x7fffffff) / 0x7fffffff;
+}
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -371,22 +370,24 @@ export class GameScene extends Phaser.Scene {
         const x = GRID_OFFSET_X + col * CELL_SIZE;
         const y = GRID_OFFSET_Y + row * CELL_SIZE;
 
-        g.fillStyle(CELL_COLORS[cell.type]);
-        g.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-
-        g.lineStyle(1, 0x000000, 0.3);
-        g.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+        switch (cell.type) {
+          case CellType.Empty:    this.drawGrassCell(g, x, y, col, row); break;
+          case CellType.Path:     this.drawPathCell(g, x, y, col, row); break;
+          case CellType.Blocked:  this.drawBlockedCell(g, x, y, col, row); break;
+          case CellType.Entrance: this.drawEntranceCell(g, x, y); break;
+          case CellType.Exit:     this.drawExitCell(g, x, y); break;
+        }
       }
     }
 
-    // 経路矢印
-    g.lineStyle(2, 0xffd700, 0.5);
+    // 経路矢印（控えめな点線）
     const path = this.mapData.path;
     for (let i = 0; i < path.length - 1; i++) {
       const fx = GRID_OFFSET_X + path[i].col * CELL_SIZE + CELL_SIZE / 2;
       const fy = GRID_OFFSET_Y + path[i].row * CELL_SIZE + CELL_SIZE / 2;
       const tx = GRID_OFFSET_X + path[i + 1].col * CELL_SIZE + CELL_SIZE / 2;
       const ty = GRID_OFFSET_Y + path[i + 1].row * CELL_SIZE + CELL_SIZE / 2;
+      g.lineStyle(1, 0xffd700, 0.35);
       g.beginPath();
       g.moveTo(fx, fy);
       g.lineTo(tx, ty);
@@ -405,6 +406,111 @@ export class GameScene extends Phaser.Scene {
       'OUT',
       { fontSize: '10px', color: '#ffffff', fontStyle: 'bold' },
     );
+  }
+
+  private drawGrassCell(g: Phaser.GameObjects.Graphics, x: number, y: number, col: number, row: number): void {
+    // ベース: 草の濃い緑
+    g.fillStyle(0x2d5a27);
+    g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+    // セル間の薄い境界線
+    g.lineStyle(1, 0x1e4020, 0.4);
+    g.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+    // 明暗の斑点で草むらの質感
+    const patches = IS_MOBILE ? 3 : 5;
+    for (let i = 0; i < patches; i++) {
+      const px = x + 2 + Math.floor(cellRand(col, row, i * 2) * (CELL_SIZE - 4));
+      const py = y + 2 + Math.floor(cellRand(col, row, i * 2 + 1) * (CELL_SIZE - 4));
+      const shade = cellRand(col, row, i + 20);
+      g.fillStyle(shade > 0.5 ? 0x3a7030 : 0x224420);
+      g.fillRect(px, py, 2, 2);
+    }
+
+    // 草の葉（短い斜め線）
+    const blades = IS_MOBILE ? 1 : 2;
+    for (let i = 0; i < blades; i++) {
+      const bx = x + 3 + Math.floor(cellRand(col, row, i + 30) * (CELL_SIZE - 6));
+      const by = y + 3 + Math.floor(cellRand(col, row, i + 40) * (CELL_SIZE - 6));
+      const dir = cellRand(col, row, i + 50) > 0.5 ? 1 : -1;
+      g.lineStyle(1, 0x4a8840, 0.7);
+      g.beginPath();
+      g.moveTo(bx, by + 3);
+      g.lineTo(bx + dir * 2, by);
+      g.strokePath();
+    }
+  }
+
+  private drawPathCell(g: Phaser.GameObjects.Graphics, x: number, y: number, col: number, row: number): void {
+    // 外縁: 暗い土色（路肩の影）
+    g.fillStyle(0x5a3a06);
+    g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+    // メイン土色（1px内側）
+    g.fillStyle(0x8b6914);
+    g.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+
+    // 砂利・石ころ（明暗2種）
+    const pebbles = IS_MOBILE ? 3 : 5;
+    for (let i = 0; i < pebbles; i++) {
+      const px = x + 2 + Math.floor(cellRand(col, row, i * 3) * (CELL_SIZE - 4));
+      const py = y + 2 + Math.floor(cellRand(col, row, i * 3 + 1) * (CELL_SIZE - 4));
+      const light = cellRand(col, row, i + 60) > 0.4;
+      g.fillStyle(light ? 0xaa8030 : 0x6a4a08);
+      g.fillRect(px, py, 2, 2);
+    }
+  }
+
+  private drawBlockedCell(g: Phaser.GameObjects.Graphics, x: number, y: number, col: number, row: number): void {
+    // ベース: 暗い岩色
+    g.fillStyle(0x252525);
+    g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+    // 石の面
+    g.fillStyle(0x333333);
+    g.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+
+    // 岩の割れ目・ハイライト線
+    const cracks = IS_MOBILE ? 1 : 2;
+    for (let i = 0; i < cracks; i++) {
+      const ax = x + 3 + Math.floor(cellRand(col, row, i + 70) * (CELL_SIZE - 6));
+      const ay = y + 3 + Math.floor(cellRand(col, row, i + 80) * (CELL_SIZE - 6));
+      const len = 3 + Math.floor(cellRand(col, row, i + 90) * 5);
+      const dx = cellRand(col, row, i + 100) > 0.5 ? 1 : -1;
+      g.lineStyle(1, 0x484848, 0.8);
+      g.beginPath();
+      g.moveTo(ax, ay);
+      g.lineTo(ax + dx * len, ay + len);
+      g.strokePath();
+    }
+
+    // ハイライト（左上の輝き）
+    g.lineStyle(1, 0x505050, 0.5);
+    g.beginPath();
+    g.moveTo(x + 2, y + CELL_SIZE - 4);
+    g.lineTo(x + 2, y + 2);
+    g.lineTo(x + CELL_SIZE - 4, y + 2);
+    g.strokePath();
+  }
+
+  private drawEntranceCell(g: Phaser.GameObjects.Graphics, x: number, y: number): void {
+    g.fillStyle(0x0d5a8a);
+    g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+    g.fillStyle(0x1a7abf);
+    g.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+    // 内側に明るい枠
+    g.lineStyle(1, 0x55aaff, 0.6);
+    g.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+  }
+
+  private drawExitCell(g: Phaser.GameObjects.Graphics, x: number, y: number): void {
+    g.fillStyle(0x8a0d0d);
+    g.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+    g.fillStyle(0xbf1a1a);
+    g.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+    // 内側に明るい枠
+    g.lineStyle(1, 0xff6666, 0.6);
+    g.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
   }
 
   private restartGame(): void {
