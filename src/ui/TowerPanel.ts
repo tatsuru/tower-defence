@@ -46,12 +46,12 @@ export class TowerPanel {
     this.state = state;
     this.getTowerCount = getTowerCount;
 
-    this.bg = scene.add.graphics();
+    this.bg = scene.add.graphics().setDepth(0);
     this.bg.fillStyle(0x0d0d1e);
     this.bg.fillRect(0, PANEL_Y - 4, SCREEN_WIDTH, BOTTOM_PANEL_HEIGHT + 4);
 
     // 2段の区切り線
-    const divider = scene.add.graphics();
+    const divider = scene.add.graphics().setDepth(0);
     divider.lineStyle(1, 0x334455);
     divider.beginPath();
     divider.moveTo(16, INFO_Y - 4);
@@ -90,21 +90,24 @@ export class TowerPanel {
   private createButton(scene: Phaser.Scene, kind: TowerKind, bx: number, by: number): ButtonEntry {
     const def = TOWER_DEFS[kind];
 
-    const btn = scene.add.graphics();
+    const btn = scene.add.graphics().setDepth(1);
 
     const fs = IS_MOBILE ? { name: '15px', cost: '13px', lock: '12px' }
                          : { name: '13px', cost: '12px', lock: '11px' };
     const nameText = scene.add
-      .text(bx + BUTTON_W / 2, by + (IS_MOBILE ? 8 : 12), def.name, { fontSize: fs.name, color: '#ffffff', fontStyle: 'bold' })
-      .setOrigin(0.5, 0);
+      .text(bx + BUTTON_W / 2, by + (IS_MOBILE ? 8 : 16), def.name, { fontSize: fs.name, color: '#ffffff', fontStyle: 'bold' })
+      .setOrigin(0.5, 0)
+      .setDepth(2);
 
     const costText = scene.add
       .text(bx + BUTTON_W / 2, by + (IS_MOBILE ? 32 : 26), '', { fontSize: fs.cost, color: '#ffd700' })
-      .setOrigin(0.5, 0);
+      .setOrigin(0.5, 0)
+      .setDepth(2);
 
     const lockText = scene.add
       .text(bx + BUTTON_W / 2, by + BUTTON_H / 2 + 4, '', { fontSize: fs.lock, color: '#888888' })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
     scene.add
       .zone(bx, by, BUTTON_W, BUTTON_H)
