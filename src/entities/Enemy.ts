@@ -8,7 +8,8 @@ export type EnemyId = number;
 let nextId = 1;
 
 interface DoTState {
-  damagePerTick: number;
+  damagePerTick: number;       // applyDot（フラット）用
+  percentPerTick?: number;     // applyPercentDot（現在HP%）用
   ticksRemaining: number;
   msUntilNextTick: number;
   onDamage?: (dealt: number, killed: boolean) => void;
@@ -116,7 +117,11 @@ export class Enemy {
     if (!this.dotState) return;
     this.dotState.msUntilNextTick -= deltaMs;
     if (this.dotState.msUntilNextTick <= 0) {
-      const dealt = this.takeDamage(this.dotState.damagePerTick);
+      // 現在HP%指定の場合はTickごとに再計算
+      const dmg = this.dotState.percentPerTick !== undefined
+        ? Math.max(1, Math.round(this.hp * this.dotState.percentPerTick / 100))
+        : this.dotState.damagePerTick;
+      const dealt = this.takeDamage(dmg);
       this.dotState.onDamage?.(dealt, this.isDead);
       this.dotState.ticksRemaining--;
       if (this.dotState.ticksRemaining <= 0) {
@@ -152,13 +157,12 @@ export class Enemy {
   }
 
   applyPercentDot(percentPerTick: number, onDamage?: (dealt: number, killed: boolean) => void): void {
-    const damagePerTick = Math.max(1, Math.round(this.maxHp * percentPerTick / 100));
     const totalTicks = Math.floor(DOT_DURATION_MS / DOT_TICK_MS);
     if (!this.dotState) {
-      this.dotState = { damagePerTick, ticksRemaining: totalTicks, msUntilNextTick: DOT_TICK_MS, onDamage };
+      this.dotState = { damagePerTick: 0, percentPerTick, ticksRemaining: totalTicks, msUntilNextTick: DOT_TICK_MS, onDamage };
     } else {
-      // 重ねがけ：ダメージと残りティックをリセット、コールバックも更新
-      this.dotState.damagePerTick = Math.max(this.dotState.damagePerTick, damagePerTick);
+      // 重ねがけ：強い方の%を採用して残りティックをリセット
+      this.dotState.percentPerTick = Math.max(this.dotState.percentPerTick ?? 0, percentPerTick);
       this.dotState.ticksRemaining = totalTicks;
       this.dotState.onDamage = onDamage;
     }

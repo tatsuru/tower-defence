@@ -151,7 +151,7 @@ export class TowerDetailPanel {
       ? `★ ${synergyLabels.join('/')} (→はシナジー後)\n`
       : '';
 
-    const dmgLabel = isDotPercent ? 'DoT(最大HP%)' : 'ダメージ';
+    const dmgLabel = isDotPercent ? 'DoT(現在HP%)' : 'ダメージ';
     const killNote = ` / キル: ${tower.killCount}`;
     const dmgStat = `${tower.totalDamageDealt}${killNote}`;
 
